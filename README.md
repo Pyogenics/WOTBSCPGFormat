@@ -14,8 +14,9 @@ Example: `53 43 50 47 01 00 00 00  53 00 00 00 53 00 00 00`
 ### Blobs
 The file is seperated into multiple sections, "blobs", which are of different lengths and seperated by the string "KA" (`4b 41`).
 
-Each blob contains a number of key/value pairs of varying length and seem to always appear in the same order, some values also seem to be the same length between blobs and files. Before the first key/value pair there is a small 11 byte header.
+Each blob contains a number of key/value pairs of varying length and seem to always appear in the same order, some values also seem to be the same length between blobs and files. Before the first key/value pair there is a small 11 byte header. Every key/value pair is prepended by three null bytes, `00 00 00`, however splitting the data by `00 00 00` isn't ideal as it can also split value fields if they contain too many zeros.
 
+Key/value pairs in order of appearance:
 Key | Value
 ----|------
 `##name`                | 5 bytes
