@@ -7,6 +7,7 @@ This resource aims to shed light on the model format, "SCPG", used by WOTB and e
 Models in WOTB are located in `/packs/3d/` and each model comes in a pair of files with extensions `.scg` and `.sc2`, for example: `packs/3d/Tanks/German/Maus.scg` `packs/3d/Tanks/German/Maus.sc2`. Game files are compressed using the `dvpl` format, you can use [this](https://github.com/Tankerch/DVPL_Converter) tool to decompress them.
 
 ## .SCG
+The largest out of the two files, contains model data like vertices.
 ### Header
 The file starts with "SCPG", aka the magic `53 43 50 47` and contains a small header of 11 bytes.
 
@@ -45,3 +46,8 @@ Example snippet (hexdump with ascii view):
 00000080  00 69 6e 64 65 78 46 6f  72 6d 61 74 02 00 00 00  |.indexFormat....|
 00000090  00 04 07 00 00 00 69 6e  64 69 63 65 73 06 b0 0a  |......indices...|
 ```
+
+## .SC2
+Smallest file, contains scene information and references to resources like textures. Similar to its' `.scg` counterpart in format.
+### Header
+The file seems to start with "SFV2)", `53 46 56 32 29` and contains a small header of 7 bytes.
