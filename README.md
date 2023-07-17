@@ -51,3 +51,5 @@ Example snippet (hexdump with ascii view):
 Smallest file, contains scene information and references to resources like textures. Similar to its' `.scg` counterpart in format.
 ### Header
 The file seems to start with "SFV2)", `53 46 56 32 29` and contains a small header of 7 bytes.
+### Blobs
+Like `.scg`, the file is seperated into multiple sections, "blobs", which are of different lengths and seperated by the string "KA" (`4b 41`). Unlike `.scg` there are a few different key/value pairs and seemingly empty blobs which contain no key/value pairs. Each blob likely lines up with a counterpart in `.scg` and the empty blobs likely signify there is no information for the `.scg` blob at that index. Before any key/value pairs, there is a small 8 byte header after each `KA`.
