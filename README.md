@@ -24,6 +24,7 @@ Key | Value
 `PolygonGroup`          | 5 bytes
 `#id`                   | 18 bytes
 `cubeTextureCoordCount` | 10 bytes
+`indexCount`            | 10 bytes
 `indexFormat`           | 10 bytes
 `indices`               | varying length
 `packing`               | 10 bytes
