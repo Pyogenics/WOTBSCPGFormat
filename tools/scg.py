@@ -16,8 +16,9 @@ with open(argv[1], "rb") as f:
         print("This isn't an scg!")
         exit(-1)
 
-    fileHeader = f.read(11)
-    blobs = f.read().split(b"KA")
+    fileHeader = f.read(12)
+    blobs = f.read().split(b"KA")[1::] # The first index is empty
 
 print(f"Blobs: {len(blobs)}")
+print(f"Reported number of blobs: {fileHeader[8]}")
 print(f"Header: {fileHeader}")
