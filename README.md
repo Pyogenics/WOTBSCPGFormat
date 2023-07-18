@@ -9,7 +9,7 @@ Models in WOTB are located in `/packs/3d/` and each model comes in a pair of fil
 ## .SCG
 The largest out of the two files, contains model data like vertices.
 ### Header
-The file starts with "SCPG", aka the magic `53 43 50 47` and contains a small header of 11 bytes. The 9th and 13th byte contain a number with unknown purpose.
+The file starts with "SCPG", aka the magic `53 43 50 47` and contains a small header of 12 bytes. The 9th and 13th byte contain the number of blobs contained within the file.
 
 Example: `53 43 50 47 01 00 00 00  53 00 00 00 53 00 00 00`
 ### Blobs
