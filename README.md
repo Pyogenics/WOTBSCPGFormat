@@ -18,21 +18,21 @@ The file is seperated into multiple sections, "blobs", which are of different le
 Each blob contains a number of key/value pairs of varying length and seem to always appear in the same order, some values also seem to be the same length between blobs and files. Before the first key/value pair there is a small 11 byte header. Every key/value pair is prepended by three null bytes, `00 00 00`, however splitting the data by `00 00 00` isn't ideal as it can also split value fields if they contain too many zeros.
 
 Key/value pairs in order of appearance:
-Key | Value
-----|------
-`##name`                | 5 bytes
-`PolygonGroup`          | 5 bytes
-`#id`                   | 18 bytes
-`cubeTextureCoordCount` | 10 bytes
-`indexCount`            | 10 bytes
-`indexFormat`           | 10 bytes
+Key | Value (field + padding)
+----|------------------------
+`##name`                | 2 + 3 bytes
+`PolygonGroup`          | 2 + 3 bytes
+`#id`                   | 15 + 3 bytes
+`cubeTextureCoordCount` | 7 + 3 bytes
+`indexCount`            | 7 + 3 bytes
+`indexFormat`           | 17 + 3 bytes
 `indices`               | varying length
-`packing`               | 10 bytes
-`primitiveCount`        | 10 bytes
-`rhi_primitiveType`     | 10 bytes
-`textureCoordCount`     | 10 bytes
-`vertexCount`           | 10 bytes
-`vertexFormat`          | 10 bytes
+`packing`               | 7 + 3 bytes
+`primitiveCount`        | 7 + 3 bytes
+`rhi_primitiveType`     | 7 + 3 bytes
+`textureCoordCount`     | 7 + 3 bytes
+`vertexCount`           | 7 + 3 bytes
+`vertexFormat`          | 7 + 3 bytes
 `vertices`              | varying length, stretches to the boundary of the next blob
 
 Example snippet (hexdump with ascii view):
@@ -58,8 +58,8 @@ Like `.scg`, the file is seperated into multiple sections, "blobs", which are of
 Key/value pairs in order of appearance:
 Key | Value
 ----|------
-`##name` | 2 bytes
-`#dataNodes` | 2 bytes
-`#heirarchy` | 2 bytes
-`#id` | 2 bytes
-`#sceneComponents` | varying length
+`##name`            | 2 bytes
+`#dataNodes`        | 2 bytes
+`#heirarchy`        | 2 bytes
+`#id`               | 2 bytes
+`#sceneComponents`  | varying length
