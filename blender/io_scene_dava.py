@@ -14,6 +14,8 @@ from bpy.props import (StringProperty,
                        CollectionProperty)
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 
+from enum import Enum
+
 bl_info = {
     "name": "DAVA Scene File v2 format",
     "description": "Support for DAVA framework scene files",
@@ -25,6 +27,95 @@ bl_info = {
     "tracker_url": "https://github.com/Pyogenics/SCPG-reverse-engineering/issues",
     "category": "Import-Export"
 }
+
+class ImportError(RuntimeError): pass
+
+'''
+IO drivers
+'''
+class KeyedArchiveTypes(Enum):
+    #TODO: Get actual values for these, using placeholders for now
+    NONE = 0
+    BOOLEAN = 1
+    INT32 = 2
+    FLOAT = 3
+    STRING = 4
+    WIDE_STRING = 5
+    BYTE_ARRAY = 6
+    UINT32 = 7
+    KEYED_ARCHIVE = 8
+    INT64 = 9
+    UINT64 = 10
+    VECTOR2 = 11
+    VECTOR3 = 12
+    VECTOR4 = 13
+    MATRIX2 = 14
+    MATRIX3 = 15
+    MATRIX4 = 16
+    COLOR = 17
+    FASTNAME = 18
+    AABBOX3 = 19
+    FILEPATH = 20
+    FLOAT64 = 21
+    INT8 = 22
+    UINT8 = 23
+    INT16 = 24
+    UINT16 = 25
+    COUNT = 26
+
+class KeyedArchive:
+    items = {}
+
+    def readValue(self, stream):
+        valueType = int.from_bytes(stream.read(1))
+
+        # read value
+        match valueType:
+            case other:
+                raise ImportError("Unknown type {valueType}")
+
+        return ""
+
+    def loadFromFileStream(self, stream):
+        # Check magic
+        if (stream.read(2) != b"KA"):
+            raise ImportError("Invalid keyed archive magic! Is the file corrupted?") #XXX: Potentially unhandled functionality
+
+        # Read header
+        version = int.from_bytes(stream.read(2), "little")
+        itemCount = int.from_bytes(stream.read(4), "little")
+        if version != 1:
+            raise ImportError(f"Invalid keyed archive version: '{version}', version isn't '1'")
+        elif itemCount == 0:
+            return
+
+        # Read items
+        for _ in range(itemCount):
+            key = self.readValue(stream)
+            value = self.readValue(stream)
+
+            self.items[key] = value
+
+class SC2Importer:
+    def importFromFileStream(self, stream):
+        # Check magic
+        if (stream.read(4) != b"SFV2"):
+            raise ImportError("Invalid magic! Are you sure this is a Scene File v2?")
+
+        # Read header
+        version = int.from_bytes(stream.read(4), "little")
+        nodeCount = int.from_bytes(stream.read(4), "little")
+
+        # Read version tags
+        if (version >= 14):
+            tags = KeyedArchive()
+            tags.loadFromFileStream(stream)
+
+        self.version = version
+        self.nodeCount = nodeCount
+
+class SC2Exporter:
+    pass
 
 '''
 UI
@@ -42,7 +133,11 @@ class ImportSC2(Operator, ImportHelper):
         return ImportHelper.invoke(self, context, event)
 
     def execute(self, context):
-        self.report({"INFO"}, self.filepath)
+        # import
+        importer = SC2Importer()
+        with open(self.filepath, "rb") as f:
+            importer.importFromFileStream(f)
+            self.report({"INFO"}, f"V{importer.version} Nc{importer.nodeCount}")
 
         return {"FINISHED"}
 
