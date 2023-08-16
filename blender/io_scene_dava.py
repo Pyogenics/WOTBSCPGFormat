@@ -9,6 +9,10 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 '''
 
 import bpy
+from bpy.types import Operator
+from bpy.props import (StringProperty,
+                       CollectionProperty)
+from bpy_extras.io_utils import ImportHelper, ExportHelper
 
 bl_info = {
     "name": "DAVA Scene File v2 format",
@@ -23,27 +27,32 @@ bl_info = {
 }
 
 '''
-IO drivers
+UI
 '''
-class ImportSC2(bpy.types.Operator):
+class ImportSC2(Operator, ImportHelper):
     bl_idname = "import_scene.sc2"
-    bl_label = "Import DAVA scene file v2"
+    bl_label = "Import DAVA scene"
     bl_description = "Import a DAVA scene file"
 
-    def execute(self, context):
-        return {'FINISHED'}
+    filter_glob: StringProperty(default="*.sc2", options={'HIDDEN'})
 
-class ExportSC2(bpy.types.Operator):
+    files: CollectionProperty(name="File Path", type=bpy.types.OperatorFileListElement)
+
+    def invoke(self, context, event):
+        return ImportHelper.invoke(self, context, event)
+
+    def execute(self, context):
+        self.report({"INFO"}, self.filepath)
+
+        return {"FINISHED"}
+
+class ExportSC2(Operator, ExportHelper):
     bl_idname = "export_scene.sc2"
-    bl_label = "Export DAVA scene file v2"
+    bl_label = "Export DAVA scene"
     bl_description = "Export a DAVA scene file"
 
     def execute(self, context):
         return {'FINISHED'}
-
-'''
-UI
-'''
 
 def menu_func_import_sc2(self, context):
     self.layout.operator(ImportSC2.bl_idname, text="DAVA scene file v2 (.sc2)")
@@ -68,7 +77,12 @@ def register():
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export_sc2)
 
 def unregister():
-    print("Goodbye, cruel world!")
+    # Unregister classes
+    for c in classes:
+        bpy.utils.unregister_class(c)
+    # Remove `File > Import-Export`
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_sc2)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export_sc2)
 
 if __name__ == "__main__":
     register()
