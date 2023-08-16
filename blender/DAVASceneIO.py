@@ -11,26 +11,61 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 import bpy
 
 bl_info = {
-    name: "DAVASceneIO",
-    description: "Support for DAVA framework scene files",
-    author: "Pyogenics, https://www.github.com/Pyogenics",
-    version: (1, 0, 0),
-    blender: (3, 6, 0),
-    doc_url: "https://github.com/Pyogenics/SCPG-reverse-engineering",
-    tracker_url: "https://github.com/Pyogenics/SCPG-reverse-engineering/issues",
-    category: "Import-Export"
+    "name": "DAVA Scene File v2 format",
+    "description": "Support for DAVA framework scene files",
+    "author": "Pyogenics, https://www.github.com/Pyogenics",
+    "version": (1, 0, 0),
+    "blender": (3, 6, 0),
+    "location": "File > Import-Export",
+    "doc_url": "https://github.com/Pyogenics/SCPG-reverse-engineering",
+    "tracker_url": "https://github.com/Pyogenics/SCPG-reverse-engineering/issues",
+    "category": "Import-Export"
 }
+
+'''
+IO drivers
+'''
+class ImportSC2(bpy.types.Operator):
+    bl_idname = "import_scene.sc2"
+    bl_label = "Import DAVA scene file v2"
+    bl_description = "Import a DAVA scene file"
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+class ExportSC2(bpy.types.Operator):
+    bl_idname = "export_scene.sc2"
+    bl_label = "Export DAVA scene file v2"
+    bl_description = "Export a DAVA scene file"
+
+    def execute(self, context):
+        return {'FINISHED'}
 
 '''
 UI
 '''
 
+def menu_func_import_sc2(self, context):
+    self.layout.operator(ImportSC2.bl_idname, text="DAVA scene file v2 (.sc2)")
+
+def menu_func_export_sc2(self, context):
+    self.layout.operator(ExportSC2.bl_idname, text="DAVA scene file v2 (.sc2)")
+
 '''
 Register
 '''
+classes = {
+    ExportSC2,
+    ImportSC2
+}
 
 def register():
-    print("Hello, world!")
+    # Register classes
+    for c in classes:
+        bpy.utils.register_class(c)
+    # File > Import-Export
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_sc2)
+    bpy.types.TOPBAR_MT_file_export.append(menu_func_export_sc2)
 
 def unregister():
     print("Goodbye, cruel world!")
