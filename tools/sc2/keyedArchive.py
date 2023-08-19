@@ -9,6 +9,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 '''
 
 from enum import Enum
+from struct import unpack
 
 from common import ImportError
 
@@ -73,25 +74,80 @@ class KeyedArchive:
         value = int.from_bytes(stream.read(4), "little", True)
         return value
 
+    def readFloat(self, stream):
+        value = unpack("f", stream.read(4))
+        return value
+
+    def readFloat64(self, stream):
+        value = unpack("f", stream.read(8))
+        return value
+
+    def readString(self, stream):
+        length = self.readUInt32()
+        value = stream.read(length)
+        return value.decode("utf-8")
+
+    def readWideString(self, stream):
+        length = self.readUInt32()
+        value = stream.read(lenght*2)
+        return value.decode("utf-16") #XXX: Maybe?
+
+    def readByteArray(self, stream):
+        length = self.readUInt32()
+        value = stream.read(length)
+        return value
+
+    def readKeyedArchive(self, stream):
+        length = self.readUInt32()
+        value = KeyedArchive()
+        value.loadFromFileStream(stream)
+        return value
+
+    def readInt64(self, stream):
+        value = int.from_bytes(stream.read(8), "little")
+        return value
+
+    def readUInt64(self, stream):
+        value = int.from_bytes(stream.read(8), "little", True)
+        return value
+
     def readValue(self, stream):
         valueType = int.from_bytes(stream.read(1))
 
         # read value
         match valueType:
             case Types.NONE.value:
-                value = stream.read(4) #XXX: Take a wild guess
-                return value
-            case Types.BOOL.value:
+                return None
+            case Types.BOOLEAN.value:
                 return self.readBoolean(stream)
+            case Types.INT8.value:
+                return self.readInt8(stream)
+            case Types.UINT8.value:
+                return self.readUInt8(stream)
+            case Types.INT16.value:
+                return self.readInt16(stream)
+            case Types.UINT16.value:
+                return self.readUInt16(stream)
             case Types.INT32.value:
                 return self.readInt32(stream)
+            case Types.UINT32.value:
+                return self.readUInt32(stream)
             case Types.FLOAT.value:
                 return self.readFloat(stream)
+            case Types.FLOAT64.value:
+                return self.readFloat64(stream)
             case Types.STRING.value:
-                length = int.from_bytes(stream.read(4), "little")
-                raise ImportError(f"l{length}")
-                string = stream.read(length)
-                return string
+                return self.readString(stream)
+            case Types.WIDE_STRING.value:
+                return self.readWideString(stream)
+            case Types.BYTE_ARRAY.value:
+                return self.readByteArray(stream)
+            case Types.KEYED_ARCHIVE.value:
+                return self.readKeyedArchive(stream)
+            case Types.INT64.value:
+                return self.readInt64(stream)
+            case Types.UINT64.value:
+                return self.readUInt64(stream)
             case other:
                 raise ImportError(f"Unknown type {str(valueType)} @ {stream.tell()}")
 
@@ -119,4 +175,5 @@ class KeyedArchive:
 
             self.items[key] = value
 
-        raise ImportError(self.items)
+
+        print(self.items)
