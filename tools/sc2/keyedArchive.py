@@ -45,6 +45,34 @@ class Types(Enum):
 class KeyedArchive:
     items = {}
 
+    def readBoolean(self, stream):
+        value = int.from_bytes(stream.read(1))
+        return bool(value)
+
+    def readInt8(self, stream):
+        value = int.from_bytes(stream.read(1))
+        return value
+
+    def readUInt8(self, stream):
+        value = int.from_bytes(stream.read(1), True)
+        return value
+
+    def readInt16(self, stream):
+        value = int.from_bytes(stream.read(2), "little")
+        return value
+
+    def readUInt16(self, stream):
+        value = int.from_bytes(stream.read(2), "little", True)
+        return value
+
+    def readInt32(self, stream):
+        value = int.from_bytes(stream.read(4), "little")
+        return value
+
+    def readUInt32(self, stream):
+        value = int.from_bytes(stream.read(4), "little", True)
+        return value
+
     def readValue(self, stream):
         valueType = int.from_bytes(stream.read(1))
 
@@ -53,6 +81,12 @@ class KeyedArchive:
             case Types.NONE.value:
                 value = stream.read(4) #XXX: Take a wild guess
                 return value
+            case Types.BOOL.value:
+                return self.readBoolean(stream)
+            case Types.INT32.value:
+                return self.readInt32(stream)
+            case Types.FLOAT.value:
+                return self.readFloat(stream)
             case Types.STRING.value:
                 length = int.from_bytes(stream.read(4), "little")
                 raise ImportError(f"l{length}")
@@ -69,11 +103,10 @@ class KeyedArchive:
         # Read header
         version = int.from_bytes(stream.read(2), "little")
         itemCount = int.from_bytes(stream.read(4), "little")
-        '''TODO: Version two archives exist!
+        print(f"KA version: {version} count: {itemCount}")
         if version != 1:
-            raise ImportError(f"Invalid keyed archive version: '{version}', version isn't '1'")
-        el'''
-        if itemCount == 0:
+            raise ImportError(f"Invalid keyed archive version: '{version}', version isn't '1', we don't implement version 2 yet!")
+        elif itemCount == 0:
             return
 
         self.version = version

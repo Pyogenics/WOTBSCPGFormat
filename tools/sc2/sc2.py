@@ -50,6 +50,7 @@ class SC2Importer:
             descriptorSize = int.from_bytes(stream.read(4), "little")
             descriptorFileType = int.from_bytes(stream.read(4), "little")
             unknownField = int.from_bytes(stream.read(4), "little") #TODO: Investigate this
+            print(f"UNK: {unknownField}")
 
         # Read data nodes
         if version >= 2:
