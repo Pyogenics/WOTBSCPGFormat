@@ -9,16 +9,35 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 '''
 from sys import argv
 
-fileHeader = b""
-blobs = []
+from keyedArchive import KeyedArchive
+from common import ImportError
+
+
+def readHeader(stream):
+    if stream.read(4) != b"SCPG":
+        raise ImportError("Invalid header magic")
+
+    version = int.from_bytes(stream.read(4), "little")
+    nodeCount = int.from_bytes(stream.read(4), "little")
+    nodeCount_two = int.from_bytes(stream.read(4), "little") # This probably is a different type of node?
+
+    print(f"SCPG version: {version}; node count: {nodeCount}; node count 2: {nodeCount_two};")
+    
+    return nodeCount
+
 with open(argv[1], "rb") as f:
-    if f.read(4) != b"SCPG":
-        print("This isn't an scg!")
-        exit(-1)
+    nodeCount = readHeader(f)
+    keyedArchives = []
+    for i in range(nodeCount):
+        print(f"Node {i}:")
+        ka = KeyedArchive()
+        ka.loadFromFileStream(f)
+        keyedArchives.append(ka)
 
-    fileHeader = f.read(12)
-    blobs = f.read().split(b"KA")[1::] # The first index is empty
-
-print(f"Blobs: {len(blobs)}")
-print(f"Reported number of blobs: {fileHeader[8]}")
-print(f"Header: {fileHeader}")
+    print(f"Done! Available archives: {len(keyedArchives)}")
+    
+    while i := input("Enter the number of a KA to dump: "):
+        archive = keyedArchives[int(i)]
+        keys = ", ".join(list(archive.items.keys()))
+        while j := input(f"Choose one: [{keys}] | "):
+            print(archive.items[j])
