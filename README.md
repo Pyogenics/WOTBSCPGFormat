@@ -9,8 +9,30 @@ Models in WOTB are located in `/packs/3d/` and each model comes in a pair of fil
 ## Blender plugin
 Read about it [here](blender/README.md)
 
+## Keyed Archive
+Keyed archives are binary blobs stored inside both `.sc2` and `.scg` files that are used to store key/value pairs. Each keyed archive is identified with the magic "KA" (`4b 41`) and contains a small header, key/value pairs come directly after the header.
+### Header
+```c
+struct KAHeader
+{
+    uint16_t version;
+    uint32_t itemCount;
+}
+```
+### Version 1
+Each entry in a version 1 KA is identified by a 1 byte data type followed by the actual data, the data is read based on it's data type.
+```c
+struct KAEntry_v1
+{
+    uint8_t dataType;
+    uint8_t data[];
+}
+```
+### Version 2
+Unknown, only seen inside `.sc2` files; data seems to be packed tightly together compared to version 1.
+
 ## .SCG
-The largest out of the two files, contains model data like vertices.
+SCene Geometry, the largest out of the two files, contains model data like vertices.
 ### Header
 The file starts with "SCPG", aka the magic `53 43 50 47` and contains a small header of 12 bytes. The 9th and 13th byte contain the number of blobs contained within the file.
 
@@ -52,7 +74,7 @@ Example snippet (hexdump with ascii view):
 ```
 
 ## .SC2
-Smallest file, contains scene information and references to resources like textures. Similar to its' `.scg` counterpart in format.
+SCene file v2, smallest file, contains scene information and references to resources like textures. Similar to its' `.scg` counterpart in format.
 ### Header
 The file seems to start with "SFV2)", `53 46 56 32 29` and contains a small header of 7 bytes.
 ### Blobs
