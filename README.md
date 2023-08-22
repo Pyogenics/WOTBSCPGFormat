@@ -32,20 +32,19 @@ struct KAEntry_v1
 Unknown, only seen inside `.sc2` files; data seems to be packed tightly together compared to version 1.
 
 ## .SCG
-SCene Geometry, the largest out of the two files, contains model data.
+SCene Geometry, the largest out of the two files, contains model data. File made up of a header followed by a series of keyed archives.
 ### Header
 The file starts with "SCPG", aka the magic `53 43 50 47` and contains a small header of 12 bytes made up of: version, node count and a second node count (seems to match the first, could count a certain node type?).
-
 ```c
 struct SCGHeader
 {
-    uint32_t version;
+    uint32_t version;       // Should be 1
     uint32_t nodeCount;
     uint32_t nodeCount2;
 }
 ```
 
-Example header: `53 43 50 47 01 00 00 00  53 00 00 00 53 00 00 00` - SCPG version 1 with 53 nodes
+Example header: `53 43 50 47 01 00 00 00  53 00 00 00 53 00 00 00` - SCPG version 1 with 53 nodes<br>
 Example file snippet (hexdump with ascii view):
 ```
 00000010  4b 41 01 00 0d 00 00 00  04 06 00 00 00 23 23 6e  |KA...........##n|
@@ -60,17 +59,27 @@ Example file snippet (hexdump with ascii view):
 ```
 
 ## .SC2
-SCene file v2, smallest file, contains scene information and references to resources like textures. Similar to its' `.scg` counterpart in format.
+SCene file v2, smallest file, contains scene information and references to resources like textures.
 ### Header
-The file seems to start with "SFV2)", `53 46 56 32 29` and contains a small header of 7 bytes.
-### Blobs
-Like `.scg`, the file is seperated into multiple sections, "blobs", which are of different lengths and seperated by the string "KA" (`4b 41`). Unlike `.scg` there are a few different key/value pairs and seemingly empty blobs which contain no key/value pairs. Each blob likely lines up with a counterpart in `.scg` and the empty blobs likely signify there is no information for the `.scg` blob at that index. Before any key/value pairs, there is a small 8 byte header after each `KA`.
+The file starts with "SFV2" (magic: `53 46 56 32`) and contains a small header of 8 bytes made up of version and node count. This is followed by a KA containing "version tags", file descriptor and data node count. The header is followed by keyed archives.
+```c
+struct SC2Header
+{
+    uint32_t version;
+    uint32_t nodeCount;
+}
+```
+#### Version tags
+Contains version information todo with the scene file.
+#### Descriptor
+Stores file type information.
+```c
+struct SC2Descriptor
+{
+    uint32_t size;
+    enum {Scene = 0, Model = 1} fileType; 
+    uint8_t otherFields[]; // Newer versions of the file could have additional fields we don't handle
+}
+```
 
-Key/value pairs in order of appearance:
-Key | Value
-----|------
-`##name`            | 2 bytes
-`#dataNodes`        | 2 bytes
-`#heirarchy`        | 2 bytes
-`#id`               | 2 bytes
-`#sceneComponents`  | varying length
+The descriptor is followed by a `uint32_t` which stores the data node count.
