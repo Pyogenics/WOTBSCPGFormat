@@ -38,8 +38,17 @@ class vertexTypes(Enum):
 
 class SCGImporter:
     def __init__(self):
-        self.vertices = []
         self.meshes = []
+
+    def buildElementArrays(self):
+        elementArrays = []
+        for mesh in self.meshes:
+            elementArray = []
+            vertices = mesh["vertices"]
+            for index in mesh["indices"]:
+                elementArray.append(vertices[index])
+            elementArrays.append(elementArray)
+        return elementArrays
 
     def parseVertexFormat(self, fmt):
         stride = 0

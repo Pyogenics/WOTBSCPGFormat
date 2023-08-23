@@ -36,8 +36,21 @@ class ImportSCG(Operator, ImportHelper):
     bl_description = "Import a DAVA scene file"
 
     filter_glob: StringProperty(default="*.scg", options={'HIDDEN'})
-
     files: CollectionProperty(name="File Path", type=bpy.types.OperatorFileListElement)
+
+    def buildCollection(self, importer):
+        objCollection = bpy.data.collections.new("model")
+        elementArrays = importer.buildElementArrays()
+        for elements in elementArrays:
+            mesh = bpy.data.meshes.new("mesh")
+            mesh.from_pydata(elements, [], [])
+            mesh.update()
+            
+            obj = bpy.data.objects.new("object", mesh)
+            objCollection.objects.link(obj)
+        bpy.context.scene.collection.children.link(objCollection)
+
+        return len(importer.meshes)
 
     def invoke(self, context, event):
         return ImportHelper.invoke(self, context, event)
@@ -47,23 +60,10 @@ class ImportSCG(Operator, ImportHelper):
         with open(self.filepath, "rb") as f:
             importer = SCGImporter()
             importer.importFromFileStream(f)
-            self.report({"INFO"}, f"Loaded {len(importer.meshes)} meshes")
 
-            collection = bpy.data.collections.new("dava")
-            # Create meshes and add to scene
-            print(len(importer.meshes))
-            for meshData in importer.meshes:
-                vertices = meshData["vertices"]
-                elementArray = []
-                for index in meshData["indices"]:
-                    elementArray.append(vertices[index])
-                mesh = bpy.data.meshes.new("mesh")
-                mesh.from_pydata(elementArray, [], [])
-                mesh.update()
-                obj = bpy.data.objects.new("object", mesh)
-                collection.objects.link(obj)
+            meshesLoaded = self.buildCollection(importer)
 
-            bpy.context.scene.collection.children.link(collection)
+            self.report({"INFO"}, f"Loaded {meshesLoaded} meshes")
 
         return {"FINISHED"}
 
