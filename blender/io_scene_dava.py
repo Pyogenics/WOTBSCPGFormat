@@ -72,7 +72,8 @@ class Types(Enum):
     COUNT = 26
 
 class KeyedArchive:
-    items = {}
+    def __init__(self):
+        self.items = {}
 
     def readBoolean(self, stream):
         value = int.from_bytes(stream.read(1))
@@ -225,8 +226,9 @@ class vertexTypes(Enum):
     CUBETEXCOORD3 = 1 << 19
 
 class SCGImporter:
-    vertices = []
-    meshes = []
+    def __init__(self):
+        self.vertices = []
+        self.meshes = []
 
     def parseVertexFormat(self, fmt):
         stride = 0
@@ -385,28 +387,19 @@ class ImportSC2(Operator, ImportHelper):
 
     files: CollectionProperty(name="File Path", type=bpy.types.OperatorFileListElement)
 
-    def createBMesh(self, vertices, indices):
-        bm = bmesh.new()
-        for index in indices:
-            #raise ImportError(f"{vertices[0:30]}")
-            #try:
-            bm.verts.new(vertices[index])
-            #except:
-            #    raise ImportError(f"Out of range: {index}, actual range: {len(vertices)}")
-        return bm
-
     def invoke(self, context, event):
         return ImportHelper.invoke(self, context, event)
 
     def execute(self, context):
         # import
-        importer = SCGImporter()
         with open(self.filepath, "rb") as f:
+            importer = SCGImporter()
             importer.importFromFileStream(f)
             self.report({"INFO"}, f"Loaded {len(importer.meshes)} meshes")
 
             collection = bpy.data.collections.new("dava")
             # Create meshes and add to scene
+            print(len(importer.meshes))
             for meshData in importer.meshes:
                 vertices = meshData["vertices"]
                 elementArray = []
@@ -419,7 +412,6 @@ class ImportSC2(Operator, ImportHelper):
                 collection.objects.link(obj)
 
             bpy.context.scene.collection.children.link(collection)
-
 
         return {"FINISHED"}
 
