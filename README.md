@@ -2,7 +2,7 @@
 Reverse engineered information about the model format used by WOTB.
 
 ## Preface
-This resource aims to shed light on the model format, "SCPG", used by WOTB and eventually provide tools to modify and create said models. Wargaming poses tools to work with "SCPG" models however they are proprietary and not much is known about them in the community.
+This resource aims to shed light on the model format, "SCPG", used by WOTB and eventually provide tools to modify and create said models.
 
 Models in WOTB are located in `/packs/3d/` and each model comes in a pair of files with extensions `.scg` and `.sc2`, for example: `packs/3d/Tanks/German/Maus.scg` `packs/3d/Tanks/German/Maus.sc2`. Game files are compressed using the `dvpl` format, you can use [this](https://github.com/Tankerch/DVPL_Converter) tool to decompress them.
 
