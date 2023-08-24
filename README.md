@@ -44,7 +44,56 @@ struct SCGHeader
 }
 ```
 
-Example header: `53 43 50 47 01 00 00 00  53 00 00 00 53 00 00 00` - SCPG version 1 with 53 nodes<br>
+Example header: `53 43 50 47 01 00 00 00  53 00 00 00 53 00 00 00` - SCPG version 1 with 53 nodes
+### Keys/Values
+#### \#\#name
+Name of the KA, acts like a type; know names:
+- PolygonGroup
+### Polygon group
+This type of KA stores polygons, literally a group of polygons + additional info.
+
+#### \#id
+Byte array of unknown purpose, some kind of unique engine internal field?.
+#### cubeTextureCoordCount
+Number of cube texture coords in this polygon group.
+#### indexCount
+Number of indices stored in the index array
+#### indexFormat
+Format of the index array, seemingly pointless?
+#### indices
+Index array.
+#### packing
+How the vertex array is packed.
+
+```c
+enum
+{
+    PACKING_NONE = 0,
+    PACKING_DEFAULT = 1
+};
+```
+#### primitiveCount
+Number of primitives contained in this polygon group.
+#### rhi\_primitiveType
+What type of primitive this polygon group stores.
+
+```c
+enum PrimitiveType
+{
+    PRIMITIVE_TRIANGLELIST = 1,
+    PRIMITIVE_TRIANGLESTRIP = 2,
+    PRIMITIVE_LINELIST = 10
+};
+```
+#### textureCoordCount
+Number of texture coords stored in this polygon group.
+#### vertexCount
+Number of vertices stored in the vertex array.
+#### vertexFormat
+Format of the vertex array, it contains multiple different data types.
+#### vertices
+The vertex array, stores all the vertices of the polygon group.
+
 Example file snippet (hexdump with ascii view):
 ```
 00000010  4b 41 01 00 0d 00 00 00  04 06 00 00 00 23 23 6e  |KA...........##n|
