@@ -15,6 +15,15 @@ from enum import Enum
 from io import BytesIO
 from struct import unpack
 
+class vertexPacking(Enum):
+    NONE = 0
+    DEFAULT = 1
+
+class primitiveType(Enum):
+    TRIANGLELIST = 1
+    TRIANGLESTRIP = 2
+    LINELIST = 10
+
 class vertexTypes(Enum):
     VERTEX = 1
     NORMAL = 1 << 1
@@ -38,17 +47,7 @@ class vertexTypes(Enum):
 
 class SCGImporter:
     def __init__(self):
-        self.meshes = []
-
-    def buildElementArrays(self):
-        elementArrays = []
-        for mesh in self.meshes:
-            elementArray = []
-            vertices = mesh["vertices"]
-            for index in mesh["indices"]:
-                elementArray.append(vertices[index])
-            elementArrays.append(elementArray)
-        return elementArrays
+        self.polygonGroups = []
 
     def parseVertexFormat(self, fmt):
         stride = 0
@@ -98,34 +97,66 @@ class SCGImporter:
 
         return stride
 
+    def parseTriangleList(self, indexStream, primitiveCount):
+        triangleList = []
+        for triI in range(primitiveCount):
+            triangleList.append([
+                int.from_bytes(indexStream.read(2), "little"),
+                int.from_bytes(indexStream.read(2), "little"),
+                int.from_bytes(indexStream.read(2), "little")
+            ])
+        return triangleList
+
+    def parseTriangleStrip(self, stream):
+        pass
+
+    def parseLineList(self, stream):
+        pass
+
+    #TODO: This could go into a separate class
     def parsePolygonGroup(self, node):
         # Parse vertex format
         stride = self.parseVertexFormat(node["vertexFormat"])
 
         #TODO: handle: primitive count, cube texture coords (https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/Render/3D/PolygonGroup.cpp#L173)
 
-        # Carve out vertex data
-        vertices = node["vertices"]
+        #TODO: Handle vertex packing
+        if node["packing"] != vertexPacking.NONE.value:
+            raise ImportError(f"Unknown vertex packing {node['packing']}")
+
+        # Carve out polygon data
+        vertexArray = node["vertices"]
+        indexArray = node["indices"]
+
+        vertices = []
+        edges = []
+        faces = []
+
         logicalSize = stride * node["vertexCount"]
-        realSize = len(vertices)
-        if node["packing"] != 0:
-            raise ImportError("Vertex packing isn't PACKING_NONE!")
-        elif logicalSize != realSize:
-            raise ImportError(f"Invalid vertex array size, logical: {size} real: {len(vertices)}")
-        elif len(vertices) < 1:
+        realSize = len(vertexArray)
+        if logicalSize != realSize:
+            raise ImportError(f"Invalid vertex array size, logical: {logicalSize} real: {realSize}")
+        #XXX: We could probably skip this instead?
+        elif realSize < 1:
             raise ImportError(f"No vertices in this PolygonGroup")
 
-        stream = BytesIO(vertices)
-        vertices = []
+        ## Compose vertex data
+        vertexStream = BytesIO(vertexArray)
+        print(f"rs: {realSize} st: {stride} vss: {vertexStream.getbuffer().nbytes} rs/st: {realSize/stride}")
         for _ in range(node["vertexCount"]):
-            xyz = unpack("fff", stream.read(12))
+            vertex = unpack("fff", vertexStream.read(12))
+            vertices.append(vertex)
+            #TODO: handle the rest of the data properly
+            vertexStream.read(stride-12)
 
-            #TODO: actually handle the other data
-            stream.read(stride - 3*4)
+        indexStream = BytesIO(indexArray)
+        match node["rhi_primitiveType"]:
+            case primitiveType.TRIANGLELIST.value:
+                faces = self.parseTriangleList(indexStream, node["primitiveCount"])
+            case other:
+                raise ImportError(f"Unknown primitve type: {node['rhi_primitiveType']}")
 
-            vertices.append(xyz)
-
-        self.meshes.append({"vertices": vertices, "indices": node["indices"]})
+        self.polygonGroups.append({"vertices": vertices, "edges": edges, "faces": faces})
 
     def importFromFileStream(self, stream):
         # Verify magic

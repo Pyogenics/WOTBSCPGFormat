@@ -40,17 +40,17 @@ class ImportSCG(Operator, ImportHelper):
 
     def buildCollection(self, importer):
         objCollection = bpy.data.collections.new("model")
-        elementArrays = importer.buildElementArrays()
+        elementArrays = importer.polygonGroups
         for elements in elementArrays:
-            mesh = bpy.data.meshes.new("mesh")
-            mesh.from_pydata(elements, [], [])
+            mesh = bpy.data.meshes.new("PolygonGroup")
+            mesh.from_pydata(elements["vertices"], elements["edges"], elements["faces"])
             mesh.update()
             
             obj = bpy.data.objects.new("object", mesh)
             objCollection.objects.link(obj)
         bpy.context.scene.collection.children.link(objCollection)
 
-        return len(importer.meshes)
+        return len(importer.polygonGroups)
 
     def invoke(self, context, event):
         return ImportHelper.invoke(self, context, event)
@@ -63,7 +63,7 @@ class ImportSCG(Operator, ImportHelper):
 
             meshesLoaded = self.buildCollection(importer)
 
-            self.report({"INFO"}, f"Loaded {meshesLoaded} meshes")
+            self.report({"INFO"}, f"Loaded {meshesLoaded} polygon groups")
 
         return {"FINISHED"}
 
