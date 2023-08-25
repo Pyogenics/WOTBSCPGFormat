@@ -6,8 +6,17 @@ This resource aims to shed light on the model format, "SCPG", used by WOTB and e
 
 Models in WOTB are located in `/packs/3d/` and each model comes in a pair of files with extensions `.scg` and `.sc2`, for example: `packs/3d/Tanks/German/Maus.scg` `packs/3d/Tanks/German/Maus.sc2`. Game files are compressed using the `dvpl` format, you can use [this](https://github.com/Tankerch/DVPL_Converter) tool to decompress them.
 
+Current work is based on SC2 version 41.
+
 ## Blender plugin
 Read about it [here](blender/README.md)
+
+## Sources
+An old version of the DAVA engine is available [here](https://github.com/smile4u/dava.engine).
+- [KeyedArchive](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/FileSystem/KeyedArchive.cpp)
+- [KeyedArchive data R/W](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/FileSystem/VariantType.cpp)
+- [SceneFileV2](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/Scene3D/SceneFileV2.cpp)
+- [PolygonGroup](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/Render/3D/PolygonGroup.cpp)
 
 ## Keyed Archive
 Keyed archives are binary blobs stored inside both `.sc2` and `.scg` files that are used to store key/value pairs. Each keyed archive is identified with the magic "KA" (`4b 41`) and contains a small header, key/value pairs come directly after the header.
