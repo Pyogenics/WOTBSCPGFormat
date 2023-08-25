@@ -9,11 +9,14 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 '''
 
 from .SCGImporter import SCGImporter
+from .SC2Importer import SC2Importer
 
 import bpy
 from bpy.types import Operator
 from bpy.props import (StringProperty, CollectionProperty)
 from bpy_extras.io_utils import ImportHelper, ExportHelper
+
+from os.path import isfile
 
 bl_info = {
     "name": "DAVA Scene File format",
@@ -42,11 +45,11 @@ class ImportSCG(Operator, ImportHelper):
         objCollection = bpy.data.collections.new("model")
         elementArrays = importer.polygonGroups
         for elements in elementArrays:
-            mesh = bpy.data.meshes.new("PolygonGroup")
+            mesh = bpy.data.meshes.new("mesh")
             mesh.from_pydata(elements["vertices"], elements["edges"], elements["faces"])
             mesh.update()
             
-            obj = bpy.data.objects.new("object", mesh)
+            obj = bpy.data.objects.new(f"PolygonGroup{elements['id']}", mesh)
             objCollection.objects.link(obj)
         bpy.context.scene.collection.children.link(objCollection)
 
@@ -64,6 +67,16 @@ class ImportSCG(Operator, ImportHelper):
             meshesLoaded = self.buildCollection(importer)
 
             self.report({"INFO"}, f"Loaded {meshesLoaded} polygon groups")
+
+        #TODO: If we have a matching sc2 file to its' scg in our file path array then load that and vice versa
+        # attempt sc2 load, assume the same name just with .sc2
+        sc2Path = self.filepath.split(".")
+        sc2Path[-1] = "sc2"
+        sc2Path = ".".join(sc2Path)
+        if (isfile(sc2Path))
+            with open(sc2Path, "rb") as f:
+                importer = SC2Importer()
+                importer.importFromFileStream(f)
 
         return {"FINISHED"}
 
