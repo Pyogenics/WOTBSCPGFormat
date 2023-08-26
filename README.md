@@ -38,10 +38,22 @@ struct KAEntry_v1
 }
 ```
 ### Version 2
-Unknown, only seen inside `.sc2` files; data seems to be packed tightly together compared to version 1.
+Only seen inside `.sc2` files; data seems to be packed tightly together compared to version 1.
+
+Seems to be an array of strings with the format.
+```
+struct KAEntry_v2
+{
+    uint16_t length;
+    char string[];
+}
+```
+Seemingly followed by a binary blob of somekind.
+### Version 258
+Only seen inside `.sc2` in varying sizes, doesn't seem to contain any strings.
 
 ## .SCG
-SCene Geometry, the largest out of the two files, contains model data. File made up of a header followed by a series of keyed archives.<br>
+SCene Geometry, the largest out of the two files, contains model data. File made up of a header followed by a series of keyed archives.<br><br>
 Example file snippet (hexdump with ascii view):
 ```
 00000010  4b 41 01 00 0d 00 00 00  04 06 00 00 00 23 23 6e  |KA...........##n|
