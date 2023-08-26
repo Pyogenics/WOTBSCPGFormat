@@ -15,6 +15,11 @@ from enum import Enum
 from io import BytesIO
 from struct import unpack
 
+indexFormatSize = [
+    2,
+    4
+]
+
 class vertexPacking(Enum):
     NONE = 0
     DEFAULT = 1
@@ -97,13 +102,13 @@ class SCGImporter:
 
         return stride
 
-    def parseTriangleList(self, indexStream, primitiveCount):
+    def parseTriangleList(self, indexStream, indexSize, primitiveCount):
         triangleList = []
         for triI in range(primitiveCount):
             triangleList.append([
-                int.from_bytes(indexStream.read(2), "little"),
-                int.from_bytes(indexStream.read(2), "little"),
-                int.from_bytes(indexStream.read(2), "little")
+                int.from_bytes(indexStream.read(indexSize), "little"),
+                int.from_bytes(indexStream.read(indexSize), "little"),
+                int.from_bytes(indexStream.read(indexSize), "little")
             ])
         return triangleList
 
@@ -142,7 +147,6 @@ class SCGImporter:
 
         ## Compose vertex data
         vertexStream = BytesIO(vertexArray)
-        print(f"rs: {realSize} st: {stride} vss: {vertexStream.getbuffer().nbytes} rs/st: {realSize/stride}")
         for _ in range(node["vertexCount"]):
             vertex = unpack("fff", vertexStream.read(12))
             vertices.append(vertex)
@@ -152,11 +156,11 @@ class SCGImporter:
         indexStream = BytesIO(indexArray)
         match node["rhi_primitiveType"]:
             case primitiveType.TRIANGLELIST.value:
-                faces = self.parseTriangleList(indexStream, node["primitiveCount"])
+                faces = self.parseTriangleList(indexStream, indexFormatSize[node["indexFormat"]], node["primitiveCount"])
             case other:
                 raise ImportError(f"Unknown primitve type: {node['rhi_primitiveType']}")
 
-        self.polygonGroups.append({"vertices": vertices, "edges": edges, "faces": faces})
+        self.polygonGroups.append({"vertices": vertices, "edges": edges, "faces": faces, "id": int.from_bytes(node["#id"], "little")})
 
     def importFromFileStream(self, stream):
         # Verify magic

@@ -41,7 +41,7 @@ struct KAEntry_v1
 Only seen inside `.sc2` files; data seems to be packed tightly together compared to version 1.
 
 Seems to be an array of strings with the format.
-```
+```c
 struct KAEntry_v2
 {
     uint16_t length;
@@ -92,7 +92,14 @@ Number of cube texture coords in this polygon group.
 #### indexCount
 Number of indices stored in the index array
 #### indexFormat
-Format of the index array, seemingly pointless?
+Size of each index in the index array (0 = uint16 1 = uint32).
+
+```c
+int32 INDEX_FORMAT_SIZE[2] = {
+    2,
+    4
+};
+```
 #### indices
 Index array.
 #### packing

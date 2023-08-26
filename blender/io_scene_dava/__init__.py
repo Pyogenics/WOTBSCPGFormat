@@ -68,15 +68,17 @@ class ImportSCG(Operator, ImportHelper):
 
             self.report({"INFO"}, f"Loaded {meshesLoaded} polygon groups")
 
+        '''
         #TODO: If we have a matching sc2 file to its' scg in our file path array then load that and vice versa
         # attempt sc2 load, assume the same name just with .sc2
         sc2Path = self.filepath.split(".")
         sc2Path[-1] = "sc2"
         sc2Path = ".".join(sc2Path)
-        if (isfile(sc2Path))
+        if (isfile(sc2Path)):
             with open(sc2Path, "rb") as f:
                 importer = SC2Importer()
                 importer.importFromFileStream(f)
+        '''
 
         return {"FINISHED"}
 
