@@ -17,6 +17,7 @@ An old version of the DAVA engine is available [here](https://github.com/smile4u
 - [KeyedArchive data R/W](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/FileSystem/VariantType.cpp)
 - [SceneFileV2](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/Scene3D/SceneFileV2.cpp)
 - [PolygonGroup](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/Render/3D/PolygonGroup.cpp)
+- [PolygonGroup vertex format RW](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/Render/3D/PolygonGroup.h)
 
 ## Keyed Archive
 Keyed archives are binary blobs stored inside both `.sc2` and `.scg` files that are used to store key/value pairs. Each keyed archive is identified with the magic "KA" (`4b 41`) and contains a small header, key/value pairs come directly after the header.
