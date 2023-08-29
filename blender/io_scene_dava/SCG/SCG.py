@@ -112,7 +112,9 @@ class VertexReader: #TODO: Handle all data types
         vertexData = VertexData()
 
         # Read vertex data
-        vertexData.VERTEX = VertexReader.readVertex(stream, count)
+        vertexData.VERTEX = VertexReader.readVertices(stream, fmt.stride, count)
+
+        return vertexData
     
     @staticmethod
     def readVertices(stream, stride, count):
@@ -120,13 +122,13 @@ class VertexReader: #TODO: Handle all data types
         
         stride -= 12
         values = []
-        for _ in range(count):
+        for i in range(count):
             values.append((
                 stream.readFloat(),
                 stream.readFloat(),
                 stream.readFloat()
             ))
-            stream.seek(1, stride)
+            stream.seek(stride, 1)
 
         stream.seek(0, fileStartPos)
         return values
@@ -134,7 +136,7 @@ class VertexReader: #TODO: Handle all data types
 # Class to store PolygonGroup data
 class PolygonGroup:
     def __init__(self):
-        self.vertices = []
+        self.vertexData = None # This gets filled in with a VertexData object
         self.edges = []
         self.faces = []
 

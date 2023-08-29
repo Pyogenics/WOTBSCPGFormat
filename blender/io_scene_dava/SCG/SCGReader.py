@@ -8,9 +8,12 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
+from io import BytesIO
+
 from .SCG import *
 from ..KA.KAReader import KAReader
 from ..FileIO import FileBuffer
+from ..ErrorWrappers import ReadError
 
 # Class that reads SCG files
 class SCGReader:
@@ -28,12 +31,12 @@ class SCGReader:
         # Read nodes
         polygonGroups = {}
         for _ in range(nodeCount):
-            ka = KAReader.readFromStream(stream)
+            ka = KAReader.readFromBuffer(stream)
             if ka["##name"] != "PolygonGroup":
                 raise ReadError("SCGReader", "Unknown data node type, data node isn't a polygon group")
 
             polyGroup = SCGReader.readPolygonGroup(ka)
-            polygonGroups[ka["#id"]] = polyGroup
+            polygonGroups[int.from_bytes(ka["#id"], "little")] = polyGroup
 
         # Create and populate an SCG object
         scg = SCG()
@@ -46,7 +49,7 @@ class SCGReader:
     @staticmethod
     def readPolygonGroup(ka):
         primitiveType = ka["rhi_primitiveType"]
-        indexFormat = indexFormatLUT[ka["indexFormat"]]
+        indexFormat = IndexFormatLUT[ka["indexFormat"]]
         vertexFormat = SCGReader.parseVertexFormat(ka["vertexFormat"])
 
         # Read buffers
@@ -60,14 +63,14 @@ class SCGReader:
             for _ in range(ka["indexCount"]): indices.append(indexBuffer.readInt16(False))
         else:
             for _ in range(ka["indexCount"]): indices.append(indexBuffer.readInt32(False))
-        vertices = VertexReader.readVertexDataFromBuffer(vertexBuffer) 
+        vertices = VertexReader.readVertexDataFromBuffer(vertexBuffer, vertexFormat, ka["vertexCount"]) 
 
         # Generate primitves
         edges = []
         faces = []
 
         if primitiveType == PrimitiveType.TRIANGLELIST.value:
-            faces = SCGReader.generateTriangleList(indices)
+            faces = SCGReader.generateTriangleList(indices, ka["indexCount"])
         elif primitiveType == PrimitiveType.TRIANGLESTRIP.value:
             faces = SCGReader.generateTriangleStrip(indices)
         elif primitiveType == PrimitiveType.LINELIST.value:
@@ -150,7 +153,8 @@ class SCGReader:
             vertexFormat.JOINTWEIGHT = stride
             stride += 4 * 4
 
-        vertexTypes.stride = stride
+        vertexFormat.stride = stride
+        return vertexFormat
 
     '''
     Primitive builders
@@ -159,11 +163,11 @@ class SCGReader:
     def generateTriangleList(indices, count):
         faces = []
         for i in range(0, count, 3):
-            faces.append(
+            faces.append([
                 indices[i],
                 indices[i+1],
                 indices[i+2]
-            )
+            ])
 
         return faces
 

@@ -8,12 +8,23 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
+from struct import unpack, pack
+
 # Utility class that provides a nice
 # abstraction for common binary IO tasks
 class FileBuffer:
     def __init__(self, stream, endian="little"):
         self.stream = stream
         self.endian = endian
+
+    '''
+    io passthrough functions
+    '''
+    def tell(self):
+        return self.stream.tell()
+
+    def seek(self, offset, mode):
+        self.stream.seek(offset, mode)
 
     '''
     Int functions
@@ -24,18 +35,18 @@ class FileBuffer:
         return value
 
     def readInt16(self, signed=True):
-        value = self.stream.read(2, self.endian)
-        value = int.from_bytes(value, signed=signed)
+        value = self.stream.read(2)
+        value = int.from_bytes(value, byteorder=self.endian, signed=signed)
         return value
 
     def readInt32(self, signed=True):
-        value = self.stream.read(4, self.endian)
-        value = int.from_bytes(value, signed=signed)
+        value = self.stream.read(4)
+        value = int.from_bytes(value, byteorder=self.endian, signed=signed)
         return value
 
     def readInt64(self, signed=True):
-        value = self.stream.read(8, self.endian)
-        value = int.from_bytes(value, signed=signed)
+        value = self.stream.read(8)
+        value = int.from_bytes(value, byteorder=self.endian, signed=signed)
         return value
 
     def writeInt8(self, value):
@@ -58,8 +69,9 @@ class FileBuffer:
     Decimal
     '''
     def readFloat(self):
-        value = stream.read(4)
+        value = self.stream.read(4)
         value = unpack("f", value)
+        (value,) = value
         return value
 
     def writeFloat(self, value):
@@ -67,8 +79,9 @@ class FileBuffer:
         self.stream.write(binData)
 
     def readDouble(self):
-        value = stream.read(8)
+        value = self.stream.read(8)
         value = unpack("d", value)
+        (value,) = value
         return value
 
     def writeFloat(self, value):
@@ -79,7 +92,7 @@ class FileBuffer:
     String
     '''
     def readString(self, count):
-        value = stream.read(count)
+        value = self.stream.read(count)
         value = value.decode("utf-8")
         return value
 
@@ -91,7 +104,7 @@ class FileBuffer:
     Binary
     '''
     def readBytes(self, count):
-        value = stream.read(count)
+        value = self.stream.read(count)
         return value
 
     def writeBytes(self, value):

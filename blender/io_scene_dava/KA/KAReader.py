@@ -9,8 +9,8 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 '''
 
 from .KA import *
-from ..blError import ReadError
 from ..FileIO import FileBuffer
+from ..ErrorWrappers import ReadError
 
 # Class to read keys/values from v1 KAs
 class V1DataReader:
@@ -69,7 +69,7 @@ class KAReader:
             raise ReadError("KAReader", "Bad magic string")
 
         # Read header
-        version = stream.readInt32(False)
+        version = stream.readInt16(False)
         itemCount = stream.readInt32(False)
 
         # Read data
@@ -77,11 +77,11 @@ class KAReader:
             return {}
         data = {}
         if version == 1:
-            KAReader.readV1Data(stream, data)
+            KAReader.readV1Data(stream, itemCount, data)
         elif version == 2:
-            KAReader.readV2Data(stream, data)
+            KAReader.readV2Data(stream, itemCount, data)
         elif version == 258:
-            KAReader.readV2Data(stream, data)
+            KAReader.readV2Data(stream, itemCount, data)
         else:
             raise ReadError("KAReader", f"Unknown KA version: {version}")
 

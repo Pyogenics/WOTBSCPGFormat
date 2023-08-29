@@ -8,15 +8,6 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
-class ImportError(RuntimeError): pass
-
-'''
-class KeyedArchiveLoadError(blImportError): pass
-class SCGImportError(blImportError): pass
-class SC2ImportError(blImportError): pass
-
-class blExportError(RuntimeError): pass
-class KeyedArchiveBuildError(blExportError): pass
-class SCGExportError(blExportError): pass
-class SC2ExportError(blExportError): pass
-'''
+class ReadError(RuntimeError):
+    def __init__(self, location, reason):
+        super().__init__(f"An error occured whilst reading! Triggered in: '{location}' Error: '{reason}'")

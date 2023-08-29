@@ -8,16 +8,6 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
-from .SCGImporter import SCGImporter
-from .SC2Importer import SC2Importer
-
-import bpy
-from bpy.types import Operator
-from bpy.props import (StringProperty, CollectionProperty)
-from bpy_extras.io_utils import ImportHelper, ExportHelper
-
-from os.path import isfile
-
 bl_info = {
     "name": "DAVA Scene File format",
     "description": "Support for DAVA framework scene files",
@@ -30,74 +20,76 @@ bl_info = {
     "category": "Import-Export"
 }
 
+import bpy
+from bpy.types import Operator
+from bpy.props import StringProperty
+from bpy_extras.io_utils import ImportHelper, ExportHelper
+
+from os.path import basename
+
+from .FileIO import FileBuffer
+from .SCG.SCGReader import SCGReader
+
 '''
 Operators
 '''
 class ImportSCG(Operator, ImportHelper):
     bl_idname = "import_scene.scg"
-    bl_label = "Import DAVA scene"
-    bl_description = "Import a DAVA scene file"
+    bl_label = "Import DAVA geometry"
+    bl_description = "Import a DAVA geometry file"
 
     filter_glob: StringProperty(default="*.scg", options={'HIDDEN'})
-    files: CollectionProperty(name="File Path", type=bpy.types.OperatorFileListElement)
-
-    def buildCollection(self, importer):
-        objCollection = bpy.data.collections.new("model")
-        elementArrays = importer.polygonGroups
-        for elements in elementArrays:
-            mesh = bpy.data.meshes.new("mesh")
-            mesh.from_pydata(elements["vertices"], elements["edges"], elements["faces"])
-            mesh.update()
-            
-            obj = bpy.data.objects.new(f"PolygonGroup{elements['id']}", mesh)
-            objCollection.objects.link(obj)
-        bpy.context.scene.collection.children.link(objCollection)
-
-        return len(importer.polygonGroups)
 
     def invoke(self, context, event):
         return ImportHelper.invoke(self, context, event)
 
     def execute(self, context):
-        # import
-        with open(self.filepath, "rb") as f:
-            importer = SCGImporter()
-            importer.importFromFileStream(f)
+        filepath = self.filepath
+        filename = basename(filepath).split(".")[0]
+        print(f"Importing DAVA geometry from {filepath}")
 
-            meshesLoaded = self.buildCollection(importer)
+        with open(filepath, "rb") as f:
+            stream = FileBuffer(f)
+            geometry = SCGReader.readFromBuffer(stream)
 
-            self.report({"INFO"}, f"Loaded {meshesLoaded} polygon groups")
+            # Add geometry to scene
+            collection = bpy.data.collections.new(filename)
+            for groupId, polyGroup in geometry.polygonGroups.items():
+                mesh = bpy.data.meshes.new("mesh")
+                mesh.from_pydata(polyGroup.vertices.VERTEX, polyGroup.edges, polyGroup.faces)
+                mesh.update()
 
-        '''
-        #TODO: If we have a matching sc2 file to its' scg in our file path array then load that and vice versa
-        # attempt sc2 load, assume the same name just with .sc2
-        sc2Path = self.filepath.split(".")
-        sc2Path[-1] = "sc2"
-        sc2Path = ".".join(sc2Path)
-        if (isfile(sc2Path)):
-            with open(sc2Path, "rb") as f:
-                importer = SC2Importer()
-                importer.importFromFileStream(f)
-        '''
+                obj = bpy.data.objects.new(f"PolygonGroup{groupId}", mesh)
+                collection.objects.link(obj)
+            bpy.context.scene.collection.children.link(collection)
+            self.report({"INFO"}, f"Loaded {len(geometry.polygonGroups)} polygon groups")
 
         return {"FINISHED"}
 
 class ExportSCG(Operator, ExportHelper):
     bl_idname = "export_scene.scg"
-    bl_label = "Export DAVA scene"
-    bl_description = "Export a DAVA scene file"
+    bl_label = "Export DAVA geometry"
+    bl_description = "Export a DAVA geometry file"
+
+    filter_glob: StringProperty(default="*.scg", options={'HIDDEN'})
+    filename_ext: StringProperty(default=".scg", options={'HIDDEN'})
+
+    def invoke(self, context, event):
+        return ExportHelper.invoke(self, context, event)
 
     def execute(self, context):
+        filepath = self.filepath
+        print(f"Exporting DAVA geometry to {filepath}")
         return {'FINISHED'}
 
 '''
 Menu
 '''
 def menu_func_import_scg(self, context):
-    self.layout.operator(ImportSCG.bl_idname, text="DAVA scene file (.scg)")
+    self.layout.operator(ImportSCG.bl_idname, text="DAVA scene geometry (.scg)")
 
 def menu_func_export_scg(self, context):
-    self.layout.operator(ExportSCG.bl_idname, text="DAVA scene file (.scg)")
+    self.layout.operator(ExportSCG.bl_idname, text="DAVA scene geometry (.scg)")
 
 '''
 Register
