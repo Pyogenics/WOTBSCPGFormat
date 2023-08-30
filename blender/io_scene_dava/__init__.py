@@ -29,6 +29,7 @@ from os.path import basename
 
 from .FileIO import FileBuffer
 from .SCG.SCGReader import SCGReader
+from .SC2.SC2Reader import SC2Reader
 
 '''
 Operators
@@ -82,6 +83,26 @@ class ExportSCG(Operator, ExportHelper):
         print(f"Exporting DAVA geometry to {filepath}")
         return {'FINISHED'}
 
+class ImportSC2(Operator, ImportHelper):
+    bl_idname = "import_scene.sc2"
+    bl_label = "Import DAVA scene"
+    bl_description = "Import a DAVA scene file"
+
+    filter_glob: StringProperty(default="*.sc2", options={'HIDDEN'})
+
+    def invoke(self, context, event):
+        return ImportHelper.invoke(self, context, event)
+
+    def execute(self, context):
+        filepath = self.filepath
+        print(f"Importing DAVA scene file from {filepath}")
+
+        with open(filepath, "rb") as f:
+            stream = FileBuffer(f)
+            SC2Reader.readFromBuffer(stream)
+
+        return {"FINISHED"}
+
 '''
 Menu
 '''
@@ -91,12 +112,16 @@ def menu_func_import_scg(self, context):
 def menu_func_export_scg(self, context):
     self.layout.operator(ExportSCG.bl_idname, text="DAVA scene geometry (.scg)")
 
+def menu_func_import_sc2(self, context):
+    self.layout.operator(ImportSC2.bl_idname, text="DAVA scene file (.sc2)")
+
 '''
 Register
 '''
 classes = {
     ExportSCG,
-    ImportSCG
+    ImportSCG,
+    ImportSC2
 }
 
 def register():
@@ -106,6 +131,7 @@ def register():
     # File > Import-Export
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_scg)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export_scg)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_sc2)
 
 def unregister():
     # Unregister classes
@@ -114,3 +140,4 @@ def unregister():
     # Remove `File > Import-Export`
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_scg)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export_scg)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_sc2)
