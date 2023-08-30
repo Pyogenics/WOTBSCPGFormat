@@ -136,7 +136,7 @@ class VertexReader: #TODO: Handle all data types
 # Class to store PolygonGroup data
 class PolygonGroup:
     def __init__(self):
-        self.vertexData = None # This gets filled in with a VertexData object
+        self.vertices = None # This gets filled in with a VertexData object
         self.edges = []
         self.faces = []
 

@@ -31,7 +31,7 @@ class FileBuffer:
     '''
     def readInt8(self, signed=True):
         value = self.stream.read(1)
-        value = int.from_bytes(value, signed=signed)
+        value = int.from_bytes(value, byteorder=self.endian, signed=signed)
         return value
 
     def readInt16(self, signed=True):
