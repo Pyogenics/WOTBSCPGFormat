@@ -35,13 +35,13 @@ class SC2Reader:
         version = stream.readInt32(False)
         nodeCount = stream.readInt32(False)
 
-        print(f"KA version: {version}, nodes: {nodeCount}")
+        print(f"SC2 version: {version}, nodes: {nodeCount}")
 
         # Read version tags
         versionTags = {}
         if version >= 14:
             versionTags = KAReader.readFromBuffer(stream)
-        print(f"KA version tags: {versionTags}")
+        print(f"SC2 version tags: {versionTags}")
 
         # Read descriptor
         descriptorSize = 0
@@ -51,10 +51,15 @@ class SC2Reader:
             descriptorSize = stream.readInt32(False)
             descriptorFileType = stream.readInt32(False)
             descriptorUnknowns = stream.readBytes(descriptorSize - 8)
-        print(f"KA descriptor size: {descriptorSize}, type: {descriptorFileType}, unknowns: {descriptorUnknowns}")
+        print(f"SC2 descriptor size: {descriptorSize}, type: {descriptorFileType}, unknowns: {descriptorUnknowns}")
+
 
         # Read data nodes
         if version >= 2:
             dataNodeCount = stream.readInt32(False) #TODO: There is something very wrong with this number
-            print("KA data node count: {dataNodeCount}")
+            print(f"SC2 data node count: {dataNodeCount}")
+
+            # Read KA2
+            ka2 = KAReader.readFromBuffer(stream)
+
             SC2Reader.readDataNodes(stream, dataNodeCount)

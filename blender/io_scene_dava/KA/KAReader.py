@@ -108,6 +108,12 @@ class V1DataReader:
             case other:
                 raise ReadError("V1DataReader", f"Unknown data type of id: {valueType}")
 
+class V2DataReader:
+    @staticmethod
+    def readValue(stream):
+        length = stream.readInt16(False)
+        return stream.readString(length)
+
 # Class to turn KAs into dictionaries
 class KAReader:
     @staticmethod
@@ -120,6 +126,8 @@ class KAReader:
         version = stream.readInt16(False)
         itemCount = stream.readInt32(False)
 
+        print(f"KA version: {version}, item count: {itemCount}")
+
         # Read data
         if itemCount == 0:
             return {}
@@ -129,7 +137,7 @@ class KAReader:
         elif version == 2:
             KAReader.readV2Data(stream, itemCount, data)
         elif version == 258:
-            KAReader.readV2Data(stream, itemCount, data)
+            KAReader.readV258Data(stream, itemCount, data)
         else:
             raise ReadError("KAReader", f"Unknown KA version: {version}")
 
@@ -148,7 +156,16 @@ class KAReader:
 
     @staticmethod
     def readV2Data(stream, count, data):
-        raise ReadError("KAReader", "Got KA of version 2, not implemented yet")
+        print("Reading v2 KA")
+        values = []
+        for _ in range(count):
+            value = V2DataReader.readValue(stream)
+            values.append(value)
+        print(f"{values}, length: {len(values)}")
+
+        # Read the OBB that comes after
+        obb = stream.readBytes(count*4+18)
+        print(f"KA2 OBB: {obb[0:18]}")
 
     @staticmethod
     def readV258Data(stream, count, data):

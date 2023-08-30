@@ -49,7 +49,10 @@ struct KAEntry_v2
     char string[];
 }
 ```
-Seemingly followed by a binary blob of somekind.
+Seemingly followed by a binary blob of somekind of size: KA entry count * 4 + 18 bytes.
+```c
+byte KAv2BinaryBlob[(KAEntryCount * 4) + 18];
+```
 ### Version 258
 Only seen inside `.sc2` in varying sizes, doesn't seem to contain any strings.
 
