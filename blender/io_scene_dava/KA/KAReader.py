@@ -18,6 +18,8 @@ class V1DataReader:
     def readValue(stream):
         valueType = stream.readInt8(False)
 
+        #TODO: Maybe we should use numpy for some types?
+        #XXX: Most of this is untested code
         match valueType:
             case Types.NONE.value:
                 return None
@@ -57,6 +59,52 @@ class V1DataReader:
                 return stream.readInt64()
             case Types.UINT64.value:
                 return stream.readInt64(False)
+            case Types.VECTOR2.value:
+                value = (
+                    stream.readFloat(),
+                    stream.readFloat()
+                )
+                return value
+            case Types.VECTOR3.value:
+                value = (
+                    stream.readFloat(),
+                    stream.readFloat(),
+                    stream.readFloat()
+                )
+                return value
+            case Types.VECTOR4.value:
+                value = (
+                    stream.readFloat(),
+                    stream.readFloat(),
+                    stream.readFloat(),
+                    stream.readFloat()
+                )
+                return value
+            case Types.MATRIX2.value:
+                raise ReadError("V1DataReader", "Unimplemented type MATRIX2") #TODO
+            case Types.MATRIX3.value:
+                raise ReadError("V1DataReader", "Unimplemented type MATRIX3") #TODO
+            case Types.MATRIX4.value:
+                raise ReadError("V1DataReader", "Unimplemented type MATRIX4") #TODO
+            case Types.COLOR.value:
+                value = (
+                    stream.readFloat(), # r
+                    stream.readFloat(), # g
+                    stream.readFloat(), # b
+                    stream.readFloat()  # a
+                )
+                return value
+            case Types.FASTNAME.value:
+                length = stream.readInt32(False)
+                value = stream.readString(length)
+                return value
+                #raise ReadError("V1DataReader", "Unimplemented type FASTNAME") #TODO
+            case Types.AABBOX3.value:
+                raise ReadError("V1DataReader", "Unimplemented type AABBOX3") #TODO
+            case Types.FILEPATH.value:
+                length = stream.readInt32(False)
+                value = stream.readString(length)
+                return value
             case other:
                 raise ReadError("V1DataReader", f"Unknown data type of id: {valueType}")
 
