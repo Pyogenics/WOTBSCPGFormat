@@ -18,6 +18,7 @@ An old version of the DAVA engine is available [here](https://github.com/smile4u
 - [SceneFileV2](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/Scene3D/SceneFileV2.cpp)
 - [PolygonGroup](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/Render/3D/PolygonGroup.cpp)
 - [PolygonGroup vertex format RW](https://github.com/smile4u/dava.engine/blob/development/Sources/Internal/Render/3D/PolygonGroup.h)
+<br>
 [gmConverter3D](https://gamemodels3d.com/forum/?topic=1348) program for converting multiple model formats, including scg + sc2. Contains useful reference implementation of more recent versions of SC2 in javascript.
 
 ## File format documentation
