@@ -72,9 +72,9 @@ class SCGReader:
         if primitiveType == PrimitiveType.TRIANGLELIST.value:
             faces = SCGReader.generateTriangleList(indices, ka["indexCount"])
         elif primitiveType == PrimitiveType.TRIANGLESTRIP.value:
-            faces = SCGReader.generateTriangleStrip(indices)
+            faces = SCGReader.generateTriangleStrip(indices, ka["indexCount"])
         elif primitiveType == PrimitiveType.LINELIST.value:
-            edges = SCGReader.generateLineList(indices)
+            edges = SCGReader.generateLineList(indices, ka["indexCount"])
         else:
             raise ReadError("SCGReader", f"Unknown primitive type of value {primitiveType}")
 
@@ -171,12 +171,34 @@ class SCGReader:
 
         return faces
 
+    #NOTE: We convert trianglestrip to trianglist to make the import easier
     @staticmethod
-    def generateTriangleStrip(indices, count): #TODO
+    def generateTriangleStrip(indices, count): 
         faces = []
+
+        # First triangle
+        faces.append([
+            indices[0],
+            indices[1],
+            indices[2]
+        ])
+
+        # Digest triangestrip into trianglelist
+        for i in range(3, count):
+            faces.append([
+                indices[i-2],
+                indices[i-1],
+                indices[i]
+            ])
+
         return faces
 
     @staticmethod
-    def generateLineList(indices, count): #TODO
+    def generateLineList(indices, count):
         edges = []
+        for i in range(0, count, 2):
+            edges.append([
+                indices[i],
+                indices[i+1]
+            ])
         return edges

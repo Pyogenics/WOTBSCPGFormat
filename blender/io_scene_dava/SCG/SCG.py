@@ -112,7 +112,8 @@ class VertexReader: #TODO: Handle all data types
         vertexData = VertexData()
 
         # Read vertex data
-        vertexData.VERTEX = VertexReader.readVertices(stream, fmt.stride, count)
+        if fmt.VERTEX != -1:
+            vertexData.VERTEX = VertexReader.readVertices(stream, fmt.stride, count)
 
         return vertexData
     
@@ -130,7 +131,7 @@ class VertexReader: #TODO: Handle all data types
             ))
             stream.seek(stride, 1)
 
-        stream.seek(0, fileStartPos)
+        stream.seek(fileStartPos, 0)
         return values
 
 # Class to store PolygonGroup data
