@@ -45,8 +45,10 @@ class V1DataReader:
                 length = stream.readInt32(False)
                 return stream.readString(length)
             case Types.WIDE_STRING.value:
-                length = stream.readInt32(False)
-                return stream.readString(length)
+                length = stream.readInt32(False) * 2 # UTF-16 is double the size
+                value = stream.readBytes(length)
+                value = value.decode("utf-16le")
+                return value
             case Types.BYTE_ARRAY.value:
                 length = stream.readInt32(False)
                 return stream.readBytes(length)
@@ -98,7 +100,6 @@ class V1DataReader:
                 length = stream.readInt32(False)
                 value = stream.readString(length)
                 return value
-                #raise ReadError("V1DataReader", "Unimplemented type FASTNAME") #TODO
             case Types.AABBOX3.value:
                 raise ReadError("V1DataReader", "Unimplemented type AABBOX3") #TODO
             case Types.FILEPATH.value:
@@ -146,10 +147,9 @@ class V258DataReader:
             case Types.STRING.value:
                 stringTableRef = stream.readInt32(False)
                 return stringTableRef
-            #TODO: Investigate this
-            #case Types.WIDE_STRING.value:
-            #    length = stream.readInt32(False)
-            #    return stream.readString(length)
+            case Types.WIDE_STRING.value:
+                stringTableRef = stream.readInt32(False)
+                return stringTableRef
             case Types.BYTE_ARRAY.value:
                 length = stream.readInt32(False)
                 return stream.readBytes(length)
@@ -201,7 +201,6 @@ class V258DataReader:
             case Types.FASTNAME.value:
                 stringTableRef = stream.readInt32(False)
                 return stringTableRef
-                #raise ReadError("V1DataReader", "Unimplemented type FASTNAME") #TODO
             case Types.AABBOX3.value:
                 raise ReadError("V258DataReader", "Unimplemented type AABBOX3") #TODO
             case Types.FILEPATH.value:
