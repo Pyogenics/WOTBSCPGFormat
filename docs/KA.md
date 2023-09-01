@@ -102,11 +102,12 @@ struct KAStringTableEntry_v2
 This is followed by an array of `uint32_t`s which are indices that map other KAs in the `.sc2` file to the string table.
 
 ## Version 258
-Only seen inside `.sc2` files; the file is a series of back to back `uint32_t` key/value pairs which map into a string table stored inside a version 2 KA.
+Only seen inside `.sc2` files; almost exactly the same as V1 KA except key and string values are `uint32_t` indices which map into a KA2 string table.
 ```c
 struct KAEntry_v258
 {
     uint32_t keyIndex;
+    uint8_t valueType;
     uint32_t valueIndex;
 }
 ```
