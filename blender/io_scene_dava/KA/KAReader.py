@@ -12,6 +12,8 @@ from .KA import *
 from ..FileIO import FileBuffer
 from ..ErrorWrappers import ReadError
 
+from io import BytesIO
+
 # Class to read keys/values from v1 KAs
 class V1DataReader:
     @staticmethod
@@ -118,9 +120,100 @@ class V2DataReader:
 # Practically like v1
 class V258DataReader:
     @staticmethod
+    def readKey(stream):
+        key = stream.readInt32(False)
+        return key
+
+    @staticmethod
     def readValue(stream):
-        value = stream.readInt32(False)
-        return value
+        valueType = stream.readInt8(False)
+
+        #TODO: Maybe we should use numpy for some types?
+        #XXX: Most of this is untested code
+        match valueType:
+            case Types.NONE.value:
+                return None
+            case Types.BOOLEAN.value:
+                return bool(stream.readInt8())
+            case Types.INT8.value:
+                return stream.readInt8()
+            case Types.UINT8.value:
+                return stream.readInt8(False)
+            case Types.INT16.value:
+                return stream.readInt16()
+            case Types.UINT16.value:
+                return stream.readInt16(False)
+            case Types.INT32.value:
+                return stream.readInt32()
+            case Types.UINT32.value:
+                return stream.readInt32(False)
+            case Types.FLOAT.value:
+                return stream.readFloat()
+            case Types.FLOAT64.value:
+                return stream.readDouble()
+            case Types.STRING.value:
+                stringTableIndex = stream.readInt32(False)
+                return V258UnresolvedString(stringTableIndex)
+            case Types.WIDE_STRING.value:
+                stringTableIndex = stream.readInt32(False)
+                return V258UnresolvedString(stringTableIndex)
+            case Types.BYTE_ARRAY.value:
+                length = stream.readInt32(False)
+                return stream.readBytes(length)
+            case Types.KEYED_ARCHIVE.value:
+                length = stream.readInt32(False)
+                value = BytesIO(stream.readBytes(length))
+                value = FileBuffer(value)
+                return KAReader.readFromBuffer(value)
+            case Types.INT64.value:
+                return stream.readInt64()
+            case Types.UINT64.value:
+                return stream.readInt64(False)
+            case Types.VECTOR2.value:
+                value = (
+                    stream.readFloat(),
+                    stream.readFloat()
+                )
+                return value
+            case Types.VECTOR3.value:
+                value = (
+                    stream.readFloat(),
+                    stream.readFloat(),
+                    stream.readFloat()
+                )
+                return value
+            case Types.VECTOR4.value:
+                value = (
+                    stream.readFloat(),
+                    stream.readFloat(),
+                    stream.readFloat(),
+                    stream.readFloat()
+                )
+                return value
+            case Types.MATRIX2.value:
+                raise ReadError("V258DataReader", "Unimplemented type MATRIX2") #TODO
+            case Types.MATRIX3.value:
+                raise ReadError("V258DataReader", "Unimplemented type MATRIX3") #TODO
+            case Types.MATRIX4.value:
+                raise ReadError("V258DataReader", "Unimplemented type MATRIX4") #TODO
+            case Types.COLOR.value:
+                value = (
+                    stream.readFloat(), # r
+                    stream.readFloat(), # g
+                    stream.readFloat(), # b
+                    stream.readFloat()  # a
+                )
+                return value
+            case Types.FASTNAME.value:
+                stringTableIndex = stream.readInt32(False)
+                return V258DataReader(stringTableIndex)
+            case Types.AABBOX3.value:
+                raise ReadError("V258DataReader", "Unimplemented type AABBOX3") #TODO
+            case Types.FILEPATH.value:
+                stringTableIndex = stream.readInt32(False)
+                return V258DataReader(stringTableIndex)
+            case other:
+                raise ReadError("V258DataReader", f"Unknown data type of id: {valueType}")
 
 # Class to turn KAs into dictionaries
 class KAReader:
@@ -133,8 +226,6 @@ class KAReader:
         # Read header
         version = stream.readInt16(False)
         itemCount = stream.readInt32(False)
-
-        print(f"KA version: {version}, item count: {itemCount}")
 
         # Read data
         if itemCount == 0:
@@ -180,6 +271,6 @@ class KAReader:
     @staticmethod
     def readV258Data(stream, count, data):
         for _ in range(count):
-            key = V258DataReader.readValue(stream)
+            key = V258DataReader.readKey(stream)
             value = V258DataReader.readValue(stream)
             data[key] = value

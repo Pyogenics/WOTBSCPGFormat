@@ -38,3 +38,8 @@ class Types(Enum):
     INT16 = 24
     UINT16 = 25
     COUNT = 26
+
+# Class used to store unresolved string table references
+class V258UnresolvedString:
+    def __init__(self, stringTableIndex):
+        self.stringTableIndex = stringTableIndex

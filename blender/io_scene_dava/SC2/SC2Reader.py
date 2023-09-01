@@ -10,8 +10,10 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 from ..ErrorWrappers import ReadError
 from ..KA.KAReader import KAReader
+from ..KA.KA import V258UnresolvedString
 
 from enum import Enum
+from collections.abc import Mapping
 
 class DescriptorFileTypes(Enum):
     NONE = -1
@@ -19,12 +21,6 @@ class DescriptorFileTypes(Enum):
     ModelFile = 1
 
 class SC2Reader:
-    @staticmethod
-    def readDataNodes(stream, count):
-        for _ in range(count):
-            node = KAReader.readFromBuffer(stream)
-            print(node)
-
     @staticmethod
     def readFromBuffer(stream):
         # Check magic
@@ -59,7 +55,41 @@ class SC2Reader:
             dataNodeCount = stream.readInt32(False) #TODO: There is something very wrong with this number
             print(f"SC2 data node count: {dataNodeCount}")
 
-            # Read KA2
-            ka2 = KAReader.readFromBuffer(stream)
+            # Read string table
+            stringTable = KAReader.readFromBuffer(stream)
+            print(f"SC2 string table {stringTable}")
 
-            SC2Reader.readDataNodes(stream, dataNodeCount)
+            # Read nodes and resolve entries into string table
+            nodeCount = stream.readInt32(False)
+            print(f"SC2 node count: {nodeCount}")
+
+            nodeName = stringTable[stream.readInt32(False)]
+            print(f"Reading {nodeName}")
+
+            unknown = stream.readBytes(10)
+            print(unknown)       
+
+            nodes = []
+            for _ in range(nodeCount):
+                node = KAReader.readFromBuffer(stream)
+
+                # Resolve strings
+                node = SC2Reader.resolveV258Strings(stringTable, node)
+                print(f"V258 pre: {stream.readBytes(5)}")
+                nodes.append(node)
+            print(nodes)
+
+    @staticmethod
+    def resolveV258Strings(stringTable, ka):
+        resolvedKa = {}
+        for key, value in ka.items():
+            key = stringTable[key]
+            if isinstance(value, V258UnresolvedString):
+                value = stringTable[value.stringTableIndex]
+            elif isinstance(value, Mapping):
+                # Resolve nested KA
+                value = SC2Reader.resolveV258Strings(stringTable, value)
+
+            resolvedKa[key] = value
+
+        return resolvedKa
