@@ -25,7 +25,7 @@ class SC2Reader:
     def readFromBuffer(stream):
         # Check magic
         if stream.readString(4) != "SFV2":
-            raise ReadError("SC2Reader", "Invalid magic stream")
+            raise ReadError("SC2Reader", "Invalid magic string")
 
         # Read header
         version = stream.readInt32(False)
@@ -52,32 +52,12 @@ class SC2Reader:
 
         # Read data nodes
         if version >= 2:
-            dataNodeCount = stream.readInt32(False) #TODO: There is something very wrong with this number
+            dataNodeCount = stream.readInt32() #TODO: There is something very wrong with this number
             print(f"SC2 data node count: {dataNodeCount}")
 
-            # Read string table
-            stringTable = KAReader.readFromBuffer(stream)
-            print(f"SC2 string table {stringTable}")
-
-            # Read nodes and resolve entries into string table
-            nodeCount = stream.readInt32(False)
-            print(f"SC2 node count: {nodeCount}")
-
-            nodeName = stringTable[stream.readInt32(False)]
-            print(f"Reading {nodeName}")
-
-            unknown = stream.readBytes(10)
-            print(unknown)       
-
-            nodes = []
-            for _ in range(nodeCount):
-                node = KAReader.readFromBuffer(stream)
-
-                # Resolve strings
-                node = SC2Reader.resolveV258Strings(stringTable, node)
-                print(f"V258 pre: {stream.readBytes(5)}")
-                nodes.append(node)
-            print(nodes)
+            # Read V2
+            node = KAReader.readFromBuffer(stream)
+            print(node)
 
     @staticmethod
     def resolveV258Strings(stringTable, ka):

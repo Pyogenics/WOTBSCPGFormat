@@ -38,6 +38,7 @@ class Types(Enum):
     INT16 = 24
     UINT16 = 25
     COUNT = 26
+    ARRAY = 27
 
 # Class used to store unresolved string table references
 class V258UnresolvedString:
