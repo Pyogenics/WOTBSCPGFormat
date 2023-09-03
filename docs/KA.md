@@ -21,7 +21,7 @@ struct KAEntry_v1
 ```
 ### Data types
 ```c++
-enum KATypes_v1 : uint8_t
+enum KATypes_v1
 {
     TYPE_NONE = 0,
     TYPE_BOOLEAN = 1,
@@ -49,7 +49,8 @@ enum KATypes_v1 : uint8_t
     TYPE_UINT8 = 23,
     TYPE_INT16 = 24,
     TYPE_UINT16 = 25,
-    TYPES_COUNT = 26
+    TYPES_COUNT = 26,
+    ARRAY = 27
 };
 ```
 All data types can be read raw with only a few exceptions.
@@ -80,11 +81,20 @@ struct KAbytearray_v1
 }
 ```
 #### keyed archive
+Nested keyed archive.
 ```c
 struct KAkeyedarchive_v1
 {
     uint32_t length;
     KA_v1 keyedArchive; // Nested KA
+}
+```
+#### array
+```c
+struct KAarray_v1
+{
+    uint32_t length;
+    KAEntry_v1 members[];
 }
 ```
 
