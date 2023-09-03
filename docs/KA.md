@@ -49,8 +49,8 @@ enum KATypes_v1
     TYPE_UINT8 = 23,
     TYPE_INT16 = 24,
     TYPE_UINT16 = 25,
-    TYPES_COUNT = 26,
-    ARRAY = 27
+    TYPE_COUNT = 26,
+    TYPE_ARRAY = 27
 };
 ```
 All data types can be read raw with only a few exceptions.
