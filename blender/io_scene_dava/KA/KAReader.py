@@ -9,246 +9,11 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 '''
 
 from .KA import *
+from .types import AABBox3
 from ..FileIO import FileBuffer
 from ..ErrorWrappers import ReadError
 
 from io import BytesIO
-from collections.abc import Mapping
-
-# Class to read keys/values from v1 KAs
-class V1DataReader:
-    @staticmethod
-    def readValue(stream):
-        valueType = stream.readInt8(False)
-
-        #TODO: Maybe we should use numpy for some types?
-        #XXX: Most of this is untested code
-        match valueType:
-            case Types.NONE.value:
-                return None
-            case Types.BOOLEAN.value:
-                return bool(stream.readInt8())
-            case Types.INT8.value:
-                return stream.readInt8()
-            case Types.UINT8.value:
-                return stream.readInt8(False)
-            case Types.INT16.value:
-                return stream.readInt16()
-            case Types.UINT16.value:
-                return stream.readInt16(False)
-            case Types.INT32.value:
-                return stream.readInt32()
-            case Types.UINT32.value:
-                return stream.readInt32(False)
-            case Types.FLOAT.value:
-                return stream.readFloat()
-            case Types.FLOAT64.value:
-                return stream.readDouble()
-            case Types.STRING.value:
-                length = stream.readInt32(False)
-                return stream.readString(length)
-            case Types.WIDE_STRING.value:
-                length = stream.readInt32(False) * 2 # UTF-16 is double the size
-                value = stream.readBytes(length)
-                value = value.decode("utf-16le")
-                return value
-            case Types.BYTE_ARRAY.value:
-                length = stream.readInt32(False)
-                return stream.readBytes(length)
-            case Types.KEYED_ARCHIVE.value:
-                length = stream.readInt32(False)
-                value = BytesIO(stream.readBytes(length))
-                value = FileBuffer(value)
-                return KAReader.readFromBuffer(value)
-            case Types.INT64.value:
-                return stream.readInt64()
-            case Types.UINT64.value:
-                return stream.readInt64(False)
-            case Types.VECTOR2.value:
-                value = (
-                    stream.readFloat(),
-                    stream.readFloat()
-                )
-                return value
-            case Types.VECTOR3.value:
-                value = (
-                    stream.readFloat(),
-                    stream.readFloat(),
-                    stream.readFloat()
-                )
-                return value
-            case Types.VECTOR4.value:
-                value = (
-                    stream.readFloat(),
-                    stream.readFloat(),
-                    stream.readFloat(),
-                    stream.readFloat()
-                )
-                return value
-            case Types.MATRIX2.value:
-                raise ReadError("V1DataReader", "Unimplemented type MATRIX2") #TODO
-            case Types.MATRIX3.value:
-                raise ReadError("V1DataReader", "Unimplemented type MATRIX3") #TODO
-            case Types.MATRIX4.value:
-                raise ReadError("V1DataReader", "Unimplemented type MATRIX4") #TODO
-            case Types.COLOR.value:
-                value = (
-                    stream.readFloat(), # r
-                    stream.readFloat(), # g
-                    stream.readFloat(), # b
-                    stream.readFloat()  # a
-                )
-                return value
-            case Types.FASTNAME.value:
-                length = stream.readInt32(False)
-                value = stream.readString(length)
-                return value
-            case Types.AABBOX3.value:
-                raise ReadError("V1DataReader", "Unimplemented type AABBOX3") #TODO
-            case Types.FILEPATH.value:
-                length = stream.readInt32(False)
-                value = stream.readString(length)
-                return value
-            case other:
-                raise ReadError("V1DataReader", f"Unknown data type of id: {valueType}")
-
-class V2DataReader:
-    @staticmethod
-    def readValue(stream):
-        length = stream.readInt16(False)
-        return stream.readString(length)
-
-    def readHierarchyValue(stream):
-        return V258DataReader.readValue(stream)
-
-# Practically like v1
-class V258DataReader:
-    @staticmethod
-    def readKey(stream):
-        key = V258UnresolvedString(stream.readInt32(False))
-        return key
-
-    @staticmethod
-    def resolveStrings(stringTable, ka):
-        resolvedKa = {}
-        for key, value in ka.items():
-            if isinstance(key, V258UnresolvedString):
-                key = stringTable[key.stringTableIndex]
-            if isinstance(value, V258UnresolvedString):
-                value = stringTable[value.stringTableIndex]
-            elif isinstance(value, Mapping):
-                # Resolve nested KA
-                value = V258DataReader.resolveStrings(stringTable, value)
-
-            resolvedKa[key] = value
-
-        return resolvedKa
-
-    @staticmethod
-    def readValue(stream):
-        valueType = stream.readInt8(False)
-
-        #TODO: Maybe we should use numpy for some types?
-        #XXX: Most of this is untested code
-        match valueType:
-            case Types.NONE.value:
-                return None
-            case Types.BOOLEAN.value:
-                return bool(stream.readInt8())
-            case Types.INT8.value:
-                return stream.readInt8()
-            case Types.UINT8.value:
-                return stream.readInt8(False)
-            case Types.INT16.value:
-                return stream.readInt16()
-            case Types.UINT16.value:
-                return stream.readInt16(False)
-            case Types.INT32.value:
-                return stream.readInt32()
-            case Types.UINT32.value:
-                return stream.readInt32(False)
-            case Types.FLOAT.value:
-                return stream.readFloat()
-            case Types.FLOAT64.value:
-                return stream.readDouble()
-            case Types.STRING.value:
-                stringTableIndex = stream.readInt32(False)
-                return V258UnresolvedString(stringTableIndex)
-            case Types.WIDE_STRING.value:
-                stringTableIndex = stream.readInt32(False)
-                return V258UnresolvedString(stringTableIndex)
-            case Types.BYTE_ARRAY.value:
-                length = stream.readInt32(False)
-                return stream.readBytes(length)
-            case Types.KEYED_ARCHIVE.value:
-                length = stream.readInt32(False)
-                value = BytesIO(stream.readBytes(length))
-                value = FileBuffer(value)
-                return KAReader.readFromBuffer(value)
-            case Types.INT64.value:
-                return stream.readInt64()
-            case Types.UINT64.value:
-                return stream.readInt64(False)
-            case Types.VECTOR2.value:
-                value = (
-                    stream.readFloat(),
-                    stream.readFloat()
-                )
-                return value
-            case Types.VECTOR3.value:
-                value = (
-                    stream.readFloat(),
-                    stream.readFloat(),
-                    stream.readFloat()
-                )
-                return value
-            case Types.VECTOR4.value:
-                value = (
-                    stream.readFloat(),
-                    stream.readFloat(),
-                    stream.readFloat(),
-                    stream.readFloat()
-                )
-                return value
-            case Types.MATRIX2.value:
-                raise ReadError("V258DataReader", "Unimplemented type MATRIX2") #TODO
-            case Types.MATRIX3.value:
-                raise ReadError("V258DataReader", "Unimplemented type MATRIX3") #TODO
-            case Types.MATRIX4.value:
-                raise ReadError("V258DataReader", "Unimplemented type MATRIX4") #TODO
-            case Types.COLOR.value:
-                value = (
-                    stream.readFloat(), # r
-                    stream.readFloat(), # g
-                    stream.readFloat(), # b
-                    stream.readFloat()  # a
-                )
-                return value
-            case Types.FASTNAME.value:
-                stringTableIndex = stream.readInt32(False)
-                return V258UnresolvedString(stringTableIndex)
-            case Types.AABBOX3.value:
-                #TODO: This is a quick solution to get SC2 reads working
-                value = [
-                    stream.readFloat(), stream.readFloat(), stream.readFloat(),
-                    stream.readFloat(), stream.readFloat(), stream.readFloat()
-                ]
-                return value
-                #raise ReadError("V258DataReader", "Unimplemented type AABBOX3") #TODO
-            case Types.FILEPATH.value:
-                stringTableIndex = stream.readInt32(False)
-                return V258UnresolvedString(stringTableIndex)
-            case Types.ARRAY.value:
-                print("Reading array")
-                length = stream.readInt32(False)
-                members = []
-                for _ in range(length):
-                    member = V258DataReader.readValue(stream)
-                    members.append(member)
-                return members
-            case other:
-                print(stream.tell())
-                raise ReadError("V258DataReader", f"Unknown data type of id: {valueType}")
 
 # Class to turn KAs into dictionaries
 class KAReader:
@@ -333,3 +98,144 @@ class KAReader:
             key = V258DataReader.readKey(stream)
             value = V258DataReader.readValue(stream)
             data[key] = value
+
+'''
+Data readers
+'''
+
+class V1DataReader:
+    # This is split from the actual reading code to allow for
+    # additional types to be added in by other classes
+    @classmethod
+    def readValue(self, stream):
+        valueType = stream.readInt8(False)
+        return self.readFromValueType(stream, valueType)
+
+    # This should be called after all other typechecking
+    # code in any classes that implement this class
+    @classmethod
+    def readFromValueType(self, stream, valueType):
+        match valueType:
+            case Types.BOOLEAN:
+                return bool(stream.readInt8())
+            case Types.INT32:
+                return stream.readInt32()
+            case Types.FLOAT:
+                return stream.readFloat()
+            case Types.STRING:
+                length = stream.readInt32(False)
+                return stream.readString(length)
+            case Types.WIDE_STRING:
+                #TODO: Make this use UTF16
+                length = stream.readInt32(False)
+                return stream.readString(length)
+            case Types.BYTE_ARRAY:
+                length = stream.readInt32(False)
+                return stream.readBytes(length)
+            case Types.UINT32:
+                return stream.readInt32(False)
+            case Types.KEYED_ARCHIVE:
+                length = stream.readInt32(False)
+                buffer = BytesIO(stream.readBytes(length))
+                buffer = FileBuffer(buffer)
+                return KAReader.readFromBuffer(buffer)
+            case Types.INT64:
+                return stream.readInt64()
+            case Types.UINT64:
+                return stream.readInt64(False)
+            case Types.VECTOR2:
+                return np.array([
+                    stream.readFloat(), stream.readFloat()
+                ])
+            case Types.VECTOR3:
+                return np.array([
+                    stream.readFloat(), stream.readFloat(), stream.readFloat()
+                ])
+            case Types.VECTOR4:
+                return np.array([
+                    stream.readFloat(), stream.readFloat(), stream.readFloat(), stream.readFloat()
+                ])
+            case Types.MATRIX2:
+                return np.matrix([
+                    [stream.readFloat(), stream.readFloat()],
+                    [stream.readFloat(), stream.readFloat()]
+                ])
+            case Types.MATRIX3:
+                return np.matrix([
+                    [stream.readFloat(), stream.readFloat(), stream.readFloat()],
+                    [stream.readFloat(), stream.readFloat(), stream.readFloat()],
+                    [stream.readFloat(), stream.readFloat(), stream.readFloat()]
+                ])
+            case Types.MATRIX4:
+                return np.matrix([
+                    [stream.readFloat(), stream.readFloat(), stream.readFloat(), stream.readFloat()],
+                    [stream.readFloat(), stream.readFloat(), stream.readFloat(), stream.readFloat()],
+                    [stream.readFloat(), stream.readFloat(), stream.readFloat(), stream.readFloat()],
+                    [stream.readFloat(), stream.readFloat(), stream.readFloat(), stream.readFloat()]
+                ])
+            case Types.COLOR:
+                return np.array([
+                    stream.readFloat(), stream.readFloat(), stream.readFloat(), stream.readFloat() #RGBA
+                ])
+            case Types.FASTNAME:
+                length = stream.readInt32(False)
+                return stream.readString(length)
+            case Types.AABBOX3:
+                minimum = DataReader.readVector3(stream)
+                maximum = DataReader.readVector3(stream)
+                return AABBox3(minimum, maximum)
+            case Types.FILEPATH:
+                length = stream.readInt32(False)
+                return stream.readString(length)
+            case Types.FLOAT64:
+                return stream.readDouble()
+            case Types.INT8:
+                return stream.readInt8()
+            case Types.UINT8:
+                return stream.readInt8(False)
+            case Types.INT16:
+                return stream.readInt16()
+            case Types.UINT16:
+                return stream.readInt16(False)
+            case Types.ARRAY:
+                length = stream.readInt32(False)
+                array = []
+                for _ in range(length):
+                    array.append(self.readValue(stream))
+                return array
+            case other:
+                raise ReadError("KA.KAReader.V1DataReader", f"Unknown data type of id: {valueType}")
+
+class V2DataReader:
+    @staticmethod
+    def readStringTable(stream, count):
+        # Read strings
+        strings = []
+        for _ in range(count):
+            length = stream.readInt32(False)
+            string = stream.readString(length)
+            strings.append(string)
+
+        # Read keys and form table
+        stringTable = {}
+        for stringI in range(count):
+            key = stream.readInt32(False)
+            stringTable[key] = string[stringI]
+
+        return stringTable
+
+class V258DataReader(V1DataReader):
+    @staticmethod
+    def readValue(stream):
+        valueType = stream.readInt8(False)
+        match valueType:
+            case Types.STRING:
+                return stream.readInt32(False)
+            case Types.WIDE_STRING:
+                return stream.readInt32(False)
+            case Types.FASTNAME:
+                return stream.readInt32(False)
+            case Types.FILEPATH:
+                return stream.readInt32(False)
+            case other:
+                return super().readFromValueType(stream, valueType)
