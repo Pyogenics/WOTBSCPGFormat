@@ -12,7 +12,7 @@ from struct import unpack, pack
 
 # Utility class that provides a nice
 # abstraction for common binary IO tasks
-class FileBuffer:
+class StreamBuffer:
     def __init__(self, stream, endian="little"):
         self.stream = stream
         self.endian = endian
@@ -84,7 +84,7 @@ class FileBuffer:
         (value,) = value
         return value
 
-    def writeFloat(self, value):
+    def writeDouble(self, value):
         binData = bytearray(pack("d", value))
         self.stream.write(binData)
 
