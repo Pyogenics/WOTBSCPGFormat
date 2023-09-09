@@ -8,10 +8,34 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
+from KA import readKA1
+
+'''
+Errors
+'''
+class SCGReadError(RuntimeError): pass
+class SCGWriteError(RuntimeError): pass
+
 '''
 SCG reader
 '''
-def readScg(stream): pass
+def readScg(stream):
+    if stream.readBytes(4) != B"SCPG":
+        raise SCGReadError("Invalid magic string")
+
+    version = stream.readInt32(False)
+    nodeCount = stream.readInt32(False)
+    stream.readInt32(False) #TODO: Duplicate node count field?
+
+    polygonGroups = {}
+    for _ in range(nodeCount):
+        node = readKA1(stream)
+        if node["##name"] != "PolygonGroup":
+            print("Warning: SCG node wasn't a polygon group, skipping")
+            continue
+        polygonGroups[ node["#id"] ] = node
+
+    return polygonGroups
 
 '''
 SCG writer
