@@ -8,6 +8,16 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
+import StreamBuffer
+
+from io import BytesIO
+
+'''
+Errors
+'''
+class KAReadError(RuntimeError): pass
+class KAWriteError(RuntimeError): pass
+
 '''
 Primitive data readers
 '''
@@ -48,7 +58,7 @@ class V1DataReader:
                 length = stream.readInt32(False)
                 buffer = BytesIO(stream.readBytes(length))
                 buffer = FileBuffer(buffer)
-                return KAReader.readFromBuffer(buffer)
+                return readKA1(buffer)
             case Types.INT64:
                 return stream.readInt64()
             case Types.UINT64:
@@ -116,11 +126,44 @@ class V1DataReader:
             case other:
                 raise KAReadError(f"Unknown data type id: {valueType}")
 
-'''
-Errors
-'''
-class KAReadError(RuntimeError): pass
-class KAWriteError(RuntimeError): pass
+class V2DataReader:
+    @classmethod
+    def readPair(self, stream, stringTable):
+        key = stringTable[
+                stream.readInt32(False)
+        ]
+        value = self.readValue(
+                stream, stream.readInt8(False), stringTable
+        )
+
+        return (key, value)
+
+    @classmethod
+    def readValue(self, stream, valueType, stringTable):
+        match valueType:
+            case Types.STRING:
+                return stringTable[ stream.readInt32(False) ]
+            case Types.WIDE_STRING:
+                return stringTable[ stream.readInt32(False) ]
+            case Types.FASTNAME:
+                return stringTable[ stream.readInt32(False) ]
+            case Types.FILEPATH:
+                return stringTable[ stream.readInt32(False) ]
+            case Types.KEYED_ARCHIVE:
+                length = stream.readInt32(False)
+                buffer = BytesIO(stream.readBytes(length))
+                buffer = FileBuffer(buffer)
+                return readKA258(buffer)
+            case Types.ARRAY:
+                length = stream.readInt32(False)
+                array = []
+                for _ in range(length):
+                    array.append(
+                            self.readValue(stream, valueType, stringTable)
+                    )
+                return array
+            case other:
+                return V1DataReader.readValue(stream, valueType)
 
 '''
 KA Readers
@@ -135,7 +178,7 @@ def readKAHeader(stream):
 
     return (version, nodeCount)
 
-def readKA1(stream): pass
+def readKA1(stream):
     version, nodeCount = readKAHeader(stream)
     if version != 1:
         raise KAReadError(f"Version mismatch: expected 1 but got {version}")
@@ -174,9 +217,23 @@ def readKA2(stream):
     for _ in range(archiveNodeCount):
         key, value = V2DataReader.readPair(stream, stringTable)
         archive[key] = value
+
+    return archive
     
 
-def readKA258(stream, stringTable): pass
+def readKA258(stream, stringTable):
+    version, nodeCount = readKAHeader(stream)
+    if version != 258:
+        raise KAReadError(f"Version mismatch, expected 258 but got {version}")
+    elif nodeCount == 0:
+        return {}
+
+    archive = {}
+    for _ in range nodeCount:
+        key, value = V2DataReader.readPair(stream, stringTable)
+        archive[key] = value
+    
+    return archive
 
 '''
 KA Writers
