@@ -49,7 +49,6 @@ enum KATypes_v1
     TYPE_UINT8 = 23,
     TYPE_INT16 = 24,
     TYPE_UINT16 = 25,
-    TYPE_COUNT = 26,
     TYPE_ARRAY = 27
 };
 ```
