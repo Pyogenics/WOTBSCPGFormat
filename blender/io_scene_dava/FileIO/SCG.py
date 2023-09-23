@@ -19,7 +19,7 @@ class SCGWriteError(RuntimeError): pass
 '''
 SCG reader
 '''
-def readScg(stream):
+def readSCG(stream):
     if stream.readBytes(4) != B"SCPG":
         raise SCGReadError("Invalid magic string")
 
