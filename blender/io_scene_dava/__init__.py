@@ -25,103 +25,89 @@ from bpy.types import Operator
 from bpy.props import StringProperty
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 
-from os.path import basename
-
-from .FileIO import FileBuffer
-from .SCG.SCGReader import SCGReader
-from .SC2.SC2Reader import SC2Reader
+from .FileIO.StreamBuffer import StreamBuffer
+from .FileIO.SCG import readSCG
+from .Geometry.PolygonGroup import PrimitiveTypes, PolygonGroup
 
 '''
 Operators
 '''
-class ImportSCG(Operator, ImportHelper):
+class ImportDAVA(Operator, ImportHelper):
     bl_idname = "import_scene.scg"
     bl_label = "Import DAVA geometry"
-    bl_description = "Import a DAVA geometry file"
+    bl_description = "Import a DAVA scene file"
 
     filter_glob: StringProperty(default="*.scg", options={'HIDDEN'})
 
     def invoke(self, context, event):
         return ImportHelper.invoke(self, context, event)
 
+    # Just import SCG whilst we get proper full imports working
     def execute(self, context):
         filepath = self.filepath
-        filename = basename(filepath).split(".")[0]
-        print(f"Importing DAVA geometry from {filepath}")
+        print(f"Importing DAVA scene from {filepath}")
+        
+        with open(filepath, "rb") as scg:
+            polyGroups = readSCG(
+                StreamBuffer(scg)
+            )
 
-        with open(filepath, "rb") as f:
-            stream = FileBuffer(f)
-            geometry = SCGReader.readFromBuffer(stream)
+            # Parse polygon groups
+            for groupID in polyGroups.keys():
+                polyGroups[groupID] = PolygonGroup( polyGroups[groupID] )
 
-            # Add geometry to scene
-            collection = bpy.data.collections.new(filename)
-            for groupId, polyGroup in geometry.polygonGroups.items():
+            # Add polygon groups to scene
+            collection = bpy.data.collections.new("DAVAMesh")
+            for groupID in polyGroups.keys():
+                group = polyGroups[groupID]
                 mesh = bpy.data.meshes.new("mesh")
-                mesh.from_pydata(polyGroup.vertices.VERTEX, polyGroup.edges, polyGroup.faces)
+
+                if group.primitiveType == PrimitiveTypes.TRIANGLELIST:
+                    mesh.from_pydata(group.vertices, [], group.getTriangleList())
+                elif group.primitiveType == PrimitiveTypes.TRIANGLESTRIP:
+                    mesh.from_pydata(group.vertices, [], group.getTriangleStrip())
+                elif group.primitiveType == PrimitiveTypes.LINELIST:
+                    mesh.from_pydata(group.vertices, group.getLineList(), [])
                 mesh.update()
 
-                obj = bpy.data.objects.new(f"PolygonGroup{groupId}", mesh)
+                obj = bpy.data.objects.new(f"PolygonGroup{groupID}", mesh)
                 collection.objects.link(obj)
             bpy.context.scene.collection.children.link(collection)
-            self.report({"INFO"}, f"Loaded {len(geometry.polygonGroups)} polygon groups")
+            self.report({"INFO"}, f"Loaded {len(polyGroups)} polygon groups")
 
         return {"FINISHED"}
 
-class ExportSCG(Operator, ExportHelper):
-    bl_idname = "export_scene.scg"
+class ExportDAVA(Operator, ExportHelper):
+    bl_idname = "export_scene.sc2"
     bl_label = "Export DAVA geometry"
-    bl_description = "Export a DAVA geometry file"
+    bl_description = "Export a scene file"
 
-    filter_glob: StringProperty(default="*.scg", options={'HIDDEN'})
-    filename_ext: StringProperty(default=".scg", options={'HIDDEN'})
+    filter_glob: StringProperty(default="*.sc2", options={'HIDDEN'})
+    filename_ext: StringProperty(default=".sc2", options={'HIDDEN'})
 
     def invoke(self, context, event):
         return ExportHelper.invoke(self, context, event)
 
     def execute(self, context):
         filepath = self.filepath
-        print(f"Exporting DAVA geometry to {filepath}")
+        print(f"Exporting DAVA scene to {filepath}")
         return {'FINISHED'}
-
-class ImportSC2(Operator, ImportHelper):
-    bl_idname = "import_scene.sc2"
-    bl_label = "Import DAVA scene"
-    bl_description = "Import a DAVA scene file"
-
-    filter_glob: StringProperty(default="*.sc2", options={'HIDDEN'})
-
-    def invoke(self, context, event):
-        return ImportHelper.invoke(self, context, event)
-
-    def execute(self, context):
-        filepath = self.filepath
-        print(f"Importing DAVA scene file from {filepath}")
-
-        with open(filepath, "rb") as f:
-            stream = FileBuffer(f)
-            SC2Reader.readFromBuffer(stream)
-
-        return {"FINISHED"}
 
 '''
 Menu
 '''
-def menu_func_import_scg(self, context):
-    self.layout.operator(ImportSCG.bl_idname, text="DAVA scene geometry (.scg)")
+def menu_func_import_dava(self, context):
+    self.layout.operator(ImportDAVA.bl_idname, text="DAVA scene (.sc2/.scg)")
 
-def menu_func_export_scg(self, context):
-    self.layout.operator(ExportSCG.bl_idname, text="DAVA scene geometry (.scg)")
-
-def menu_func_import_sc2(self, context):
-    self.layout.operator(ImportSC2.bl_idname, text="DAVA scene file (.sc2)")
+def menu_func_export_dava(self, context):
+    self.layout.operator(ExportDAVA.bl_idname, text="DAVA scene (.sc2/.scg)")
 
 '''
 Register
 '''
 classes = {
-    ExportSCG,
-    ImportSCG,
-    ImportSC2
+    ExportDAVA,
+    ImportDAVA
 }
 
 def register():
@@ -129,15 +115,13 @@ def register():
     for c in classes:
         bpy.utils.register_class(c)
     # File > Import-Export
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_scg)
-    bpy.types.TOPBAR_MT_file_export.append(menu_func_export_scg)
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_sc2)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_dava)
+#    bpy.types.TOPBAR_MT_file_export.append(menu_func_export_dava)
 
 def unregister():
     # Unregister classes
     for c in classes:
         bpy.utils.unregister_class(c)
     # Remove `File > Import-Export`
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_scg)
-    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export_scg)
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_sc2)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_dava)
+#    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export_dava)

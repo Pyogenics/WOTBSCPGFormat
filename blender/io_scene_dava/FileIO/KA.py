@@ -8,7 +8,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
-import StreamBuffer
+from .StreamBuffer import StreamBuffer
 
 from io import BytesIO
 
@@ -17,6 +17,38 @@ Errors
 '''
 class KAReadError(RuntimeError): pass
 class KAWriteError(RuntimeError): pass
+
+'''
+Data types
+'''
+class Types:
+    NONE = 0
+    BOOLEAN = 1
+    INT32 = 2
+    FLOAT = 3
+    STRING = 4
+    WIDE_STRING = 5
+    BYTE_ARRAY = 6
+    UINT32 = 7
+    KEYED_ARCHIVE = 8
+    INT64 = 9
+    UINT64 = 10
+    VECTOR2 = 11
+    VECTOR3 = 12
+    VECTOR4 = 13
+    MATRIX2 = 14
+    MATRIX3 = 15
+    MATRIX4 = 16
+    COLOR = 17
+    FASTNAME = 18
+    AABBOX3 = 19
+    FILEPATH = 20
+    FLOAT64 = 21
+    INT8 = 22
+    UINT8 = 23
+    INT16 = 24
+    UINT16 = 25
+    ARRAY = 27
 
 '''
 Primitive data readers
@@ -172,9 +204,8 @@ def readKAHeader(stream):
     if stream.readBytes(2) != b"KA":
         raise KAReadError("Invalid magic string")
 
-    version = stream.readInt32(False)
+    version = stream.readInt16(False)
     nodeCount = stream.readInt32(False)
-    stream.readInt32(False) #TODO: duplicate of node count?
 
     return (version, nodeCount)
 
@@ -229,7 +260,7 @@ def readKA258(stream, stringTable):
         return {}
 
     archive = {}
-    for _ in range nodeCount:
+    for _ in range(nodeCount):
         key, value = V2DataReader.readPair(stream, stringTable)
         archive[key] = value
     

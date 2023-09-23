@@ -8,6 +8,8 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
+from io import BytesIO
+
 from ..FileIO.StreamBuffer import StreamBuffer
 
 class VertexTypes:
@@ -56,6 +58,7 @@ class VertexFormat:
         self.JOINTWEIGHT = -1
 
         # Parse format
+        stride = 0
         if (fmt & VertexTypes.VERTEX):
             self.VERTEX = stride
             stride += 3 * 4
@@ -130,6 +133,7 @@ class PolygonGroup:
         self.id = polyGroup["#id"]
         self.cubeTextureCoordCount = polyGroup["cubeTextureCoordCount"]
         self.primitiveType = polyGroup["rhi_primitiveType"]
+        self.primitiveCount = polyGroup["primitiveCount"]
 
         # Vertices
         self.vertices = []
@@ -147,7 +151,7 @@ class PolygonGroup:
         self.cubetexcoords = []
 
         # Parse vertex format
-        vertexFormat = VertexFormat(polyGroup["self"])
+        vertexFormat = VertexFormat(polyGroup["vertexFormat"])
 
         # Parse vertices TODO
         stream = StreamBuffer( BytesIO(polyGroup["vertices"]) )
@@ -156,6 +160,7 @@ class PolygonGroup:
                 self.vertices.append(
                         (stream.readFloat(), stream.readFloat(), stream.readFloat())
                 )
+            stream.readBytes(vertexFormat.stride - 12) # Read off unhandled data
 
         # Parse indices
         # 0 = uint16_t
@@ -167,57 +172,49 @@ class PolygonGroup:
         if polyGroup["indexFormat"] == 1:
             for _ in range(polyGroup["indexCount"]): self.indices.append( stream.readInt32(False) )
 
-        '''
-        Primitive builders
+    '''
+    Primitive builders
 
-        line list, triangle list, triangle strip
-        '''
-        # Turn indices + vertices into a single vertex array
-        def collectVertices(self, indices):
-            vertexArray = []
-            for index in indices:
-                vertexArray.append( self.vertices[index] )
-            return vertexArray
-
-        def generateTriangleList(self):
-            faceIndices = []
-            for i in range(0, count, 3):
-                faceIndices.append([
-                    self.indices[i],
-                    self.indices[i+1],
-                    self.indices[i+2]
-                ])
-
-            return self.collectVertices(faceIndices)
-
-        #NOTE: We convert trianglestrip to trianglist to make the import easier
-        def generateTriangleStrip(self): 
-            faceIndices = []
-
-            # First triangle
+    line list, triangle list, triangle strip
+    '''
+    def getTriangleList(self):
+        faceIndices = []
+        for i in range(0, len(self.indices), 3):
             faceIndices.append([
-                self.indices[0],
-                self.indices[1],
-                self.indices[2]
+                self.indices[i],
+                self.indices[i+1],
+                self.indices[i+2]
             ])
 
-            # Digest triangestrip into trianglelist
-            for i in range(3, count):
-                faceIndices.append([
-                    self.indices[i-2],
-                    self.indices[i-1],
-                    self.indices[i]
-                ])
+        return faceIndices
 
-            return self.collectVertices(indices)
+    #NOTE: We convert trianglestrip to trianglist to make the import easier
+    def getTriangleStrip(self): 
+        faceIndices = []
 
-        def generateLineList(self):
-            edgeIndices = []
-            for i in range(0, count, 2):
-                edgeIndices.append([
-                    self.indices[i],
-                    self.indices[i+1]
-                ])
+        # First triangle
+        faceIndices.append([
+            self.indices[0],
+            self.indices[1],
+            self.indices[2]
+        ])
 
+        # Digest triangestrip into trianglelist
+        for i in range(3, len(self.indices)):
+            faceIndices.append([
+                self.indices[i-2],
+                self.indices[i-1],
+                self.indices[i]
+            ])
 
-            return self.collectVertices(edgeIndices)
+        return faceIndices
+
+    def getLineList(self):
+        edgeIndices = []
+        for i in range(0, len(self.indices), 2):
+            edgeIndices.append([
+                self.indices[i],
+                self.indices[i+1]
+            ])
+
+        return edgeIndices
