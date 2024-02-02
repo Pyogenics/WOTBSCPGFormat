@@ -1,6 +1,6 @@
 # Keyed archive
 
-A hierarchy of information.
+Represents a tree of data.
 
 ```cpp
 struct KA {
@@ -11,7 +11,7 @@ struct KA {
 
 ## Header
 
-The header's version of the keyed arhive determines what comes next.
+The header's version of the keyed archive determines what comes next.
 
 ```cpp
 struct KAHeader {
@@ -21,7 +21,7 @@ struct KAHeader {
 
 ## Body version `0x0001`
 
-A very basic archive where any given child is a pair of a string (the key) and some value.
+A very basic archive where any given child is a pair of a string (the key) and some value. Check below for documentation on `KAPair`.
 
 ```cpp
 struct KABodyV0x0001 {
@@ -32,11 +32,11 @@ struct KABodyV0x0001 {
 
 ## Body version `0x0002`
 
-This archive leverages fast names (numeric ids pointing to a string in a table). This arhive is structured as follows:
+This archive leverages fast names (numeric ids pointing to a string in a table). This archive is structured as follows:
 
-- Fast name count: the number of memebers in the string table.
+- Fast name count: the number of members in the string table.
 - Fast names: an array of strings
-- Fast name ids: an array of ids that correspond 1 to 1 with the array of strings above
+- Fast name ids: an array of ids that correspond with the array of strings
   - Assemble names and ids into a table for later use by fast name keyed arhive values
   - The key of an archive pair here is also a fast name
 - The children
@@ -47,7 +47,7 @@ struct KABodyV0x0002 {
   KAFastNameString[fastNameCount] fastNames;
   uint32[fastNameCount] fastNameIds;
   uint32 count;
-  KABodyV0x0002Value[count] children;
+  KABodyV0x0002Pair[count] children;
 }
 
 struct KAFastNameString {
@@ -55,7 +55,7 @@ struct KAFastNameString {
   ascii[length] value;
 }
 
-struct KABodyV0x0002Value {
+struct KABodyV0x0002Pair {
   uint32 keyFastNameId;
   KAValue value;
 }
@@ -63,7 +63,7 @@ struct KABodyV0x0002Value {
 
 ## Body version `0x0102`
 
-This keyed archive version can only be a descendant of a keyed arhive version `0x0002` as it relies on a fast name string table. The value of `value` should be treated just like a `KAValue` unless the `value`'s type is `KAType.STRING` in which case it should be treated like a fast name.
+This keyed archive version can only be a (possibly indirect) descendant of a keyed archive version `0x0002` as it relies on a fast name string table. `value` should be treated just like a `KAValue` unless the `value`'s type is `KAType.STRING` in which case it should be treated like a fast name.
 
 ```cpp
 struct KABodyV0x0102 {
@@ -82,7 +82,7 @@ struct KABodyV0x0102Pair {
 This is completely empty.
 
 ```cpp
-struct KABodyV0x0102 {}
+struct KABodyV0xff02 {}
 ```
 
 ## Primitives
@@ -97,7 +97,7 @@ struct KAPair {
 
 struct KAValue {
   KAValueHeader header;
-  KAValueBody body;
+  KAValueBody body; // look below for documentation on this
 }
 
 struct KAValueHeader {
@@ -156,7 +156,8 @@ struct KAValueBodyTypeString {
   ascii[length] value;
 }
 struct KAValueBodyTypeWideString {
-  // TODO
+  uint32 length;
+  wchar_t[length] value;
 }
 struct KAValueBodyTypeByteArray {
   uint32 length;
@@ -193,7 +194,7 @@ struct KAValueBodyTypeMatrix4 {
   Matrix4 value;
 }
 struct KAValueBodyTypeColor {
-  // TODO
+  // it is unknown how this works
 }
 struct KAValueBodyTypeFastName {
   uint32 index;
@@ -220,11 +221,12 @@ struct KAValueBodyTypeUint16 {
   uint16 value;
 }
 struct KAValueBodyTypeArray {
-  // TODO
+  uint32 length;
+  KAValue[length] values;
 }
 struct KAValueBodyTypeTransform {
   Vector3 position;
   Vector3 scale;
-  Vector4 quaternion;
+  Vector4 quaternion; // rotation
 }
 ```
