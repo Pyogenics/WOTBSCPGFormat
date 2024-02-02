@@ -1,7 +1,9 @@
 # Keyed Archive
+
 Keyed archives are binary blobs stored inside both `.sc2` and `.scg` files that are used to store key/value pairs. Each keyed archive is identified with the magic "KA" (`4b 41`) and contains a small header, key/value pairs come directly after the header.
 
 ## Header
+
 ```c
 struct KAHeader
 {
@@ -11,7 +13,9 @@ struct KAHeader
 ```
 
 ## Version 1
+
 Each entry in a version 1 KA is identified by a 1 byte data type followed by the actual data, the data is read based on its' data type.
+
 ```c
 struct KAEntry_v1
 {
@@ -19,7 +23,9 @@ struct KAEntry_v1
     uint8_t data[];
 }
 ```
+
 ### Data types
+
 ```c++
 enum KATypes_v1
 {
@@ -52,10 +58,15 @@ enum KATypes_v1
     TYPE_ARRAY = 27
 };
 ```
+
 All data types can be read raw with only a few exceptions.
+
 #### none
+
 Shouldn't exist inside a normal KA, this value is only used in code as a default value.
+
 #### string, filepath, fastname
+
 ```c
 struct KAstring_v1
 {
@@ -63,7 +74,9 @@ struct KAstring_v1
     char string[];
 }
 ```
+
 #### wide string
+
 ```c
 struct KAwstring_v1
 {
@@ -71,7 +84,9 @@ struct KAwstring_v1
     wchar_t string[];
 }
 ```
+
 #### byte array
+
 ```c
 struct KAbytearray_v1
 {
@@ -79,8 +94,11 @@ struct KAbytearray_v1
     byte bytes[];
 }
 ```
+
 #### keyed archive
+
 Nested keyed archive.
+
 ```c
 struct KAkeyedarchive_v1
 {
@@ -88,7 +106,9 @@ struct KAkeyedarchive_v1
     KA_v1 keyedArchive; // Nested KA
 }
 ```
+
 #### array
+
 ```c
 struct KAarray_v1
 {
@@ -98,9 +118,11 @@ struct KAarray_v1
 ```
 
 ## Version 2
+
 Only seen inside `.sc2` files; data seems to be packed tightly together compared to version 1.
 
 Starts with an array of keys/values with the format.
+
 ```c
 struct KAStringTableEntry_v2
 {
@@ -108,10 +130,13 @@ struct KAStringTableEntry_v2
     char string[];
 }
 ```
+
 This is followed by an array of `uint32_t`s which are indices that map other KAs in the `.sc2` file to the string table.
 
 ## Version 258
+
 Only seen inside `.sc2` files; almost exactly the same as V1 KA except key and string values are `uint32_t` indices which map into a KA2 string table.
+
 ```c
 struct KAEntry_v258
 {
