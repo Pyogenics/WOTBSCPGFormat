@@ -13,15 +13,15 @@ struct SCG {
 
 There are two node counts with the same value. Our implementation uses the first node count however the reason behind why there's two is unknown.
 
-- Magic: should always ve "SCPG".
-- Version: should always be 1
+- Magic: should always be `"SCPG"`.
+- Version: should always be `1`
 
 ```cpp
 struct SCGHeader {
   ascii[4] magic;
   uint32 version;
   uint32 nodeCount;
-  uint32 nodeCoun2;
+  uint32 nodeCount2;
 }
 ```
 
@@ -38,12 +38,12 @@ struct SCGBody {
 ## Polygon group
 
 - Name: always `"PolygonGroup"`
-- Id: an 8 byte Buffer and can be interpreted as a `uint64`.
+- Id: an 8 byte buffer and can be interpreted as a `uint64`.
 - Cube texture coordinates count: how many coordinates for a cube texture is in this group.
 - Index count: the number of entries in `indices`.
-- Index format: the format of `indices`; 0 means `indices` is an array of `uint16` and 1 means an arrag of `uint32`.
+- Index format: the format of `indices`; 0 means `indices` is an array of `uint16` and 1 means an array of `uint32`.
 - Indices: the indices of the mesh as an array of integers.
-- Packing: TODO
+- Packing: it is unknown what this does; doesn't seem to affect the mesh.
 - Primitive count: the number of primitives in `vertices`.
 - Render hardware interface primitive type: what type of vertices is in `vertices`.
 - Texture coordinates count: the number of texture coordinates in `vertices`.
@@ -54,7 +54,7 @@ struct SCGBody {
   - To get the full format of a single vertex, map through all members of `VertexAttribute` (incrementing order) and generate a list of all present attributes.
   - The aquired format is repeated `vertexCount` number of times.
     - Example: if the resulting format is `[VertexAttribute.VERTEX, VertexAttribute.TEXCOORD0, VertexAttribute.NORMAL]`, the entirety of `vertices` will be `Vector3 normal`, `Vector2 texcoord0`, and `Vector3 normal` over and over again.
-    - The vector sizes of each vertex attribute type is documentated below
+    - The vector sizes of each vertex attribute type is documented below as `vertexAttributeVectorSizes`
   - Note that all vertices have the `VertexAttribute.VERTEX` attribute.
 - Assembling the indices and vertices appropriately will result in a 3d mesh.
 
@@ -89,7 +89,6 @@ enum RHIPrimitiveType {
 This documentation will only discuss information native to SCPG.
 
 - Vertex: always present in all vertices.
-- Color: TODO
 - Texture & cube texture coordinates: use the first available entry when trying to access highest lod textures.
 - Hard joint index: serves as a discriminator for vertices; can be used to split up the mesh; is used to split up the armor plates on the armor models.
 - Pivot deprecated: you should never encounter this.
