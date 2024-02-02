@@ -30,7 +30,7 @@ An old version of the DAVA engine is available [here](https://github.com/smile4u
 
 Binary structures are represented as C++ struts and thr resulting tree is represented as TypeScript definitions. All values use little endian encoding.
 
-- [Keyed archive](docs/ka.md)
-- [Scene geometry](docs/scg.md)
-- [Scene version 2](docs/sc2.md)
+- [Keyed archive](docs/KA.md)
+- [Scene geometry](docs/SCG.md)
+- [Scene version 2](docs/SC2.md)
 - [Primitives](docs/primitives.md)
