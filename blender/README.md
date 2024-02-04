@@ -15,7 +15,7 @@ Export a file:
 ## Install
 The addon requires, at minimum, blender 3.6.
 
-1. [Download the addon](https://github.com/Pyogenics/SCPG-reverse-engineering/archive/refs/heads/master.zip), and unzip it
+1. Download [io_scene_dava.zip](https://github.com/Pyogenics/SCPG-reverse-engineering/releases), and extract it
 2. Install the addon, copy the `io_scene_dava` folder to your blender `addons` folder.
 4. Enable the addon, in blender go to `Edit > Preferences > Add-ons` and search for `DAVA` and enable the plugin.
 3. Use the addon, see `Status` on this page for available features.
