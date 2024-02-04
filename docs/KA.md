@@ -1,122 +1,232 @@
-# Keyed Archive
-Keyed archives are binary blobs stored inside both `.sc2` and `.scg` files that are used to store key/value pairs. Each keyed archive is identified with the magic "KA" (`4b 41`) and contains a small header, key/value pairs come directly after the header.
+# Keyed archive
 
-## Header
-```c
-struct KAHeader
-{
-    uint16_t version;
-    uint32_t itemCount;
-}
-```
+Represents a tree of data.
 
-## Version 1
-Each entry in a version 1 KA is identified by a 1 byte data type followed by the actual data, the data is read based on its' data type.
-```c
-struct KAEntry_v1
-{
-    uint8_t dataType;
-    uint8_t data[];
-}
-```
-### Data types
-```c++
-enum KATypes_v1
-{
-    TYPE_NONE = 0,
-    TYPE_BOOLEAN = 1,
-    TYPE_INT32 = 2,
-    TYPE_FLOAT = 3,
-    TYPE_STRING = 4,
-    TYPE_WIDE_STRING = 5,
-    TYPE_BYTE_ARRAY = 6,
-    TYPE_UINT32 = 7,
-    TYPE_KEYED_ARCHIVE = 8,
-    TYPE_INT64 = 9,
-    TYPE_UINT64 = 10,
-    TYPE_VECTOR2 = 11,
-    TYPE_VECTOR3 = 12,
-    TYPE_VECTOR4 = 13,
-    TYPE_MATRIX2 = 14,
-    TYPE_MATRIX3 = 15,
-    TYPE_MATRIX4 16,
-    TYPE_COLOR = 17,
-    TYPE_FASTNAME = 18,
-    TYPE_AABBOX3 = 19,
-    TYPE_FILEPATH = 20,
-    TYPE_FLOAT64 = 21,
-    TYPE_INT8 = 22,
-    TYPE_UINT8 = 23,
-    TYPE_INT16 = 24,
-    TYPE_UINT16 = 25,
-    TYPE_ARRAY = 27
-};
-```
-All data types can be read raw with only a few exceptions.
-#### none
-Shouldn't exist inside a normal KA, this value is only used in code as a default value.
-#### string, filepath, fastname
-```c
-struct KAstring_v1
-{
-    uint32_t length;
-    char string[];
-}
-```
-#### wide string
-```c
-struct KAwstring_v1
-{
-    uint32_t length;
-    wchar_t string[];
-}
-```
-#### byte array
-```c
-struct KAbytearray_v1
-{
-    uint32_t length;
-    byte bytes[];
-}
-```
-#### keyed archive
-Nested keyed archive.
-```c
-struct KAkeyedarchive_v1
-{
-    uint32_t length;
-    KA_v1 keyedArchive; // Nested KA
-}
-```
-#### array
-```c
-struct KAarray_v1
-{
-    uint32_t length;
-    KAEntry_v1 members[];
+```cpp
+struct KA {
+  KAHeader header;
+  KABody body;
 }
 ```
 
-## Version 2
-Only seen inside `.sc2` files; data seems to be packed tightly together compared to version 1.
+## Header
 
-Starts with an array of keys/values with the format.
-```c
-struct KAStringTableEntry_v2
-{
-    uint16_t length;
-    char string[];
+The header's version of the keyed archive determines what comes next.
+
+```cpp
+struct KAHeader {
+  uint16 version;
 }
 ```
-This is followed by an array of `uint32_t`s which are indices that map other KAs in the `.sc2` file to the string table.
 
-## Version 258
-Only seen inside `.sc2` files; almost exactly the same as V1 KA except key and string values are `uint32_t` indices which map into a KA2 string table.
-```c
-struct KAEntry_v258
-{
-    uint32_t keyIndex;
-    uint8_t valueType;
-    uint32_t valueIndex;
+## Body version `0x0001`
+
+A very basic archive where any given child is a pair of a string (the key) and some value. Check below for documentation on `KAPair`.
+
+```cpp
+struct KABodyV0x0001 {
+  uint32 count;
+  KAPair[count] children;
+}
+```
+
+## Body version `0x0002`
+
+This archive leverages fast names (numeric ids pointing to a string in a table). This archive is structured as follows:
+
+- Fast name count: the number of members in the string table.
+- Fast names: an array of strings
+- Fast name ids: an array of ids that correspond with the array of strings
+  - Assemble names and ids into a table for later use by fast name keyed arhive values
+  - The key of an archive pair here is also a fast name
+- The children
+
+```cpp
+struct KABodyV0x0002 {
+  uint32 fastNameCount;
+  KAFastNameString[fastNameCount] fastNames;
+  uint32[fastNameCount] fastNameIds;
+  uint32 count;
+  KABodyV0x0002Pair[count] children;
+}
+
+struct KAFastNameString {
+  uint16 length;
+  ascii[length] value;
+}
+
+struct KABodyV0x0002Pair {
+  uint32 keyFastNameId;
+  KAValue value;
+}
+```
+
+## Body version `0x0102`
+
+This keyed archive version can only be a (possibly indirect) descendant of a keyed archive version `0x0002` as it relies on a fast name string table. `value` should be treated just like a `KAValue` unless the `value`'s type is `KAType.STRING` in which case it should be treated like a fast name.
+
+```cpp
+struct KABodyV0x0102 {
+  uint32 count;
+  KABodyV0x0102Pair[count] children;
+}
+
+struct KABodyV0x0102Pair {
+  KAValueBodyTypeFastName key;
+  KABodyV0x0102PairValue value;
+}
+```
+
+## Body version `0xff02`
+
+This is completely empty.
+
+```cpp
+struct KABodyV0xff02 {}
+```
+
+## Primitives
+
+These primitives can be found throughout the archive.
+
+```cpp
+struct KAPair {
+  KAValue name; // always a string
+  KAValue value;
+}
+
+struct KAValue {
+  KAValueHeader header;
+  KAValueBody body; // look below for documentation on this
+}
+
+struct KAValueHeader {
+  KAType type; // read as uint8
+}
+
+enum KAType {
+  NONE = 0,
+  BOOLEAN = 1,
+  INT32 = 2,
+  FLOAT = 3,
+  STRING = 4,
+  WIDE_STRING = 5,
+  BYTE_ARRAY = 6,
+  UINT32 = 7,
+  KEYED_ARCHIVE = 8,
+  INT64 = 9,
+  UINT64 = 10,
+  VECTOR2 = 11,
+  VECTOR3 = 12,
+  VECTOR4 = 13,
+  MATRIX2 = 14,
+  MATRIX3 = 15,
+  MATRIX4 = 16,
+  COLOR = 17,
+  FASTNAME = 18,
+  AABBOX3 = 19,
+  FILEPATH = 20,
+  FLOAT64 = 21,
+  INT8 = 22,
+  UINT8 = 23,
+  INT16 = 24,
+  UINT16 = 25,
+  ARRAY = 27,
+  TRANSFORM = 29,
+}
+```
+
+### Value bodies
+
+What `KAValueBody` is depends on the header's `type`.
+
+```cpp
+struct KAValueBodyTypeNone {}
+struct KAValueBodyTypeBoolean {
+  bool value;
+}
+struct KAValueBodyTypeInt32 {
+  int32 value;
+}
+struct KAValueBodyTypeFloat {
+  float value;
+}
+struct KAValueBodyTypeString {
+  uint32 length;
+  ascii[length] value;
+}
+struct KAValueBodyTypeWideString {
+  uint32 length;
+  wchar_t[length] value;
+}
+struct KAValueBodyTypeByteArray {
+  uint32 length;
+  byte[length] value;
+}
+struct KAValueBodyTypeUint32 {
+  uint32 value;
+}
+struct KAValueBodyTypeKeyedArchive {
+  KA value;
+}
+struct KAValueBodyTypeInt64 {
+  int64 value;
+}
+struct KAValueBodyTypeUint64 {
+  uint64 value;
+}
+struct KAValueBodyTypeVector2 {
+  Vector2 value;
+}
+struct KAValueBodyTypeVector3 {
+  Vector3 value;
+}
+struct KAValueBodyTypeVector4 {
+  Vector4 value;
+}
+struct KAValueBodyTypeMatrix2 {
+  Matrix2 value;
+}
+struct KAValueBodyTypeMatrix3 {
+  Matrix3 value;
+}
+struct KAValueBodyTypeMatrix4 {
+  Matrix4 value;
+}
+struct KAValueBodyTypeColor {
+  // it is unknown how this works
+}
+struct KAValueBodyTypeFastName {
+  uint32 index;
+  // value is the index member of corresponding string table
+}
+struct KAValueBodyTypeAABBox3 {
+  Vector3 minimum;
+  Vector3 maximum;
+}
+struct KAValueBodyTypeFilePath {
+  uint32 length;
+  ascii[length] value;
+}
+struct KAValueBodyTypeFloat64 {
+  double value;
+}
+struct KAValueBodyTypeInt8 {
+  int8 value;
+}
+struct KAValueBodyTypeInt16 {
+  int16 value;
+}
+struct KAValueBodyTypeUint16 {
+  uint16 value;
+}
+struct KAValueBodyTypeArray {
+  uint32 length;
+  KAValue[length] values;
+}
+struct KAValueBodyTypeTransform {
+  Vector3 position;
+  Vector3 scale;
+  Vector4 quaternion; // rotation
 }
 ```
