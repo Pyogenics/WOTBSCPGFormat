@@ -28,7 +28,7 @@ An old version of the DAVA engine is available [here](https://github.com/smile4u
 
 ## File format documentation
 
-Binary structures are represented as C++ struts and thr resulting tree is represented as TypeScript definitions. All values use little endian encoding.
+Binary structures are represented as C++ structs and the resulting tree is represented as TypeScript definitions. All values use little endian encoding.
 
 - [Keyed archive](docs/KA.md)
 - [Scene geometry](docs/SCG.md)

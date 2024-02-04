@@ -18,7 +18,7 @@ There are two node counts with the same value. Our implementation uses the first
 
 ```cpp
 struct SCGHeader {
-  ascii[4] magic;
+  char magic[4];
   uint32 version;
   uint32 nodeCount;
   uint32 nodeCount2;
@@ -31,7 +31,7 @@ The rest of the file is just keyed archives.
 
 ```cpp
 struct SCGBody {
-  KA[header.nodeCount] polygonGroups;
+  KA polygonGroups[header.nodeCount];
 }
 ```
 
@@ -94,7 +94,7 @@ This documentation will only discuss information native to SCPG.
 - Pivot deprecated: you should never encounter this.
 
 ```cpp
-export enum VertexAttribute {
+enum VertexAttribute {
   VERTEX = 0,
   NORMAL = 1,
   COLOR = 2,

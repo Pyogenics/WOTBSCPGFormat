@@ -15,7 +15,7 @@ struct SC2 {
 
 ```cpp
 struct SC2Header {
-  ascii[4] magic;
+  char magic[4];
   uint32 version;
   uint32 nodeCount;
 }

@@ -26,7 +26,7 @@ A very basic archive where any given child is a pair of a string (the key) and s
 ```cpp
 struct KABodyV0x0001 {
   uint32 count;
-  KAPair[count] children;
+  KAPair children[count];
 }
 ```
 
@@ -44,15 +44,15 @@ This archive leverages fast names (numeric ids pointing to a string in a table).
 ```cpp
 struct KABodyV0x0002 {
   uint32 fastNameCount;
-  KAFastNameString[fastNameCount] fastNames;
-  uint32[fastNameCount] fastNameIds;
+  KAFastNameString fastNames[fastNameCount];
+  uint32 fastNameIds[fastNameCount];
   uint32 count;
-  KABodyV0x0002Pair[count] children;
+  KABodyV0x0002Pair children[count];
 }
 
 struct KAFastNameString {
   uint16 length;
-  ascii[length] value;
+  ascii value[length];
 }
 
 struct KABodyV0x0002Pair {
@@ -68,7 +68,7 @@ This keyed archive version can only be a (possibly indirect) descendant of a key
 ```cpp
 struct KABodyV0x0102 {
   uint32 count;
-  KABodyV0x0102Pair[count] children;
+  KABodyV0x0102Pair children[count];
 }
 
 struct KABodyV0x0102Pair {
@@ -153,15 +153,15 @@ struct KAValueBodyTypeFloat {
 }
 struct KAValueBodyTypeString {
   uint32 length;
-  ascii[length] value;
+  ascii value[length];
 }
 struct KAValueBodyTypeWideString {
   uint32 length;
-  wchar_t[length] value;
+  wchar_t value[length];
 }
 struct KAValueBodyTypeByteArray {
   uint32 length;
-  byte[length] value;
+  byte value[length];
 }
 struct KAValueBodyTypeUint32 {
   uint32 value;
@@ -206,7 +206,7 @@ struct KAValueBodyTypeAABBox3 {
 }
 struct KAValueBodyTypeFilePath {
   uint32 length;
-  ascii[length] value;
+  char value[length];
 }
 struct KAValueBodyTypeFloat64 {
   double value;
@@ -222,7 +222,7 @@ struct KAValueBodyTypeUint16 {
 }
 struct KAValueBodyTypeArray {
   uint32 length;
-  KAValue[length] values;
+  KAValue values[length];
 }
 struct KAValueBodyTypeTransform {
   Vector3 position;
