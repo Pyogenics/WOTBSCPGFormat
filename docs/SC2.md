@@ -83,8 +83,8 @@ interface SC2 {
   - Decal mask: alpha mask for camouflages
   - Mask map: it is unknown what this does
   - Miscellaneous map:
-    - G: ambient occlusion
-    - Alpha: emissive
+    - G: emissive
+    - Alpha: ambient occlusion
   - Normal map: regular DX11 style normal map
 - Config count: if present, it implies the present of config archive members
 
