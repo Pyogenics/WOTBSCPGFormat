@@ -50,7 +50,7 @@ struct SCGBody {
 - Vertex count: the number of vertices.
 - Vertex format: a `uint32` that represents the format of the attributes of vertices in `vertices`.
   - To check if a vertex attribute is present, mask a bit shifted one with the format integer and see if it isn't 0.
-    - Example: `vertexFormat & 1 << VertexAttribute.TANGENT != 0` will be true if the tangent property is present for all vertices.
+    - Example: `vertexFormat & (1 << VertexAttribute.TANGENT) != 0` will be true if the tangent property is present for all vertices.
   - To get the full format of a single vertex, map through all members of `VertexAttribute` (incrementing order) and generate a list of all present attributes.
   - The aquired format is repeated `vertexCount` number of times.
     - Example: if the resulting format is `[VertexAttribute.VERTEX, VertexAttribute.TEXCOORD0, VertexAttribute.NORMAL]`, the entirety of `vertices` will be `Vector3 normal`, `Vector2 texcoord0`, and `Vector3 normal` over and over again.
