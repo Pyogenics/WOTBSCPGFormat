@@ -1,0 +1,36 @@
+schema_version = "1.0.0"
+
+id = "io_scene_dava"
+version = "1.0.0"
+name = "Dava framework file formats"
+tagline = "Import-Export Dava framework scenes and geometry data"
+maintainer = "Pyogenics <https://github.com/Pyogenics>"
+type = "add-on"
+
+website = "https://github.com/Pyogenics/WOTBSCPGFormat"
+
+tags = ["Import-Export"]
+
+blender_version_min = "4.2.0"
+
+license = [
+  "SPDX:MIT",
+]
+copyright = [
+   "2024 Pyogenics",
+]
+
+# wheels = [
+# ]
+
+[permissions]
+files = "Import-Export Dava framework scenes and geometry"
+
+# [build]
+# # These are the default build excluded patterns.
+# # You only need to edit them if you want different options.
+# paths_exclude_pattern = [
+#   "__pycache__/",
+#   "/.git/",
+#   "/*.zip",
+# ]
