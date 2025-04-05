@@ -11,7 +11,7 @@ class SCG:
 
         # Verify signature
         signature = stream.read(4)
-        if signature != B"SCPG":
+        if signature != b"SCPG":
             raise RuntimeError(f"Invalid SCG signature: {signature}")
         
         # Read header

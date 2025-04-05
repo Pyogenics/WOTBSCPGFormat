@@ -4,6 +4,7 @@ from bpy.props import StringProperty
 from bpy_extras.io_utils import ImportHelper
 
 from .SCG import SCG
+from .SC2 import SC2
 from .BlenderDataImporter import BlenderDataImporter
 
 '''
@@ -28,11 +29,15 @@ class ImportDava(Operator, ImportHelper):
 
         # Read data
         geometryData = SCG()
+        # with open(self.filepath, "rb") as file:
+        #      geometryData.read(file)
+
+        sceneData = SC2()
         with open(self.filepath, "rb") as file:
-            geometryData.read(file)
+            sceneData.read(file)
 
         # Import data
-        importer = BlenderDataImporter(geometryData)
+        importer = BlenderDataImporter(sceneData, geometryData)
         objects = importer.importData()
         for ob in objects:
             bpy.context.collection.objects.link(ob)

@@ -1,4 +1,6 @@
 from .Utils import unpackStream
+from io import BytesIO
+from time import time_ns
 
 class KeyedArchiveDataTypes:
     NONE = 0
@@ -28,6 +30,7 @@ class KeyedArchiveDataTypes:
     INT16 = 24
     UINT16 = 25
     ARRAY = 27
+    TRANSFORM = 29
 
 '''
 Version 1
@@ -61,13 +64,15 @@ def readVersion1Value(stream):
         value, = unpackStream("<I", stream)
         return value
     elif dataType == KeyedArchiveDataTypes.KEYED_ARCHIVE:
+        length, = unpackStream("<I", stream)
+        stream = BytesIO(stream.read(length))
         value = readKeyedArchive(stream)
         return value
     elif dataType == KeyedArchiveDataTypes.INT64:
-        value, = unpackStream("<l", stream)
+        value, = unpackStream("<q", stream)
         return value
     elif dataType == KeyedArchiveDataTypes.UINT64:
-        value, = unpackStream("<L", stream)
+        value, = unpackStream("<Q", stream)
         return value
     elif dataType == KeyedArchiveDataTypes.VECTOR2:
         value = unpackStream("<2f", stream)
@@ -120,8 +125,114 @@ def readVersion1Value(stream):
         value = []
         for _ in range(length):
             value.append(
-                readVersion1Value(steam)
+                readVersion1Value(stream)
             )
+        return value
+    elif dataType == KeyedArchiveDataTypes.TRANSFORM:
+        value = unpackStream("<10f", stream)
+        return value
+    else:
+        raise RuntimeError(f"Unknown KeyedArchive data type: {dataType}")
+
+'''
+Version 2
+'''
+def readVersion2Value(stream, fastnames):
+    dataType, = unpackStream("B", stream)
+    if dataType == KeyedArchiveDataTypes.NONE:
+        return None
+    elif dataType == KeyedArchiveDataTypes.BOOLEAN:
+        value, = unpackStream("b", stream)
+        return value > 0
+    elif dataType == KeyedArchiveDataTypes.INT32:
+        value, = unpackStream("<i", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.FLOAT:
+        value, = unpackStream("<f", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.STRING:
+        valueID, = unpackStream("<I", stream)
+        value = fastnames[valueID]
+        return value
+    elif dataType == KeyedArchiveDataTypes.WIDE_STRING:
+        valueID, = unpackStream("<I", stream)
+        value = fastnames[valueID]
+        return value
+    elif dataType == KeyedArchiveDataTypes.BYTE_ARRAY:
+        length, = unpackStream("<I", stream)
+        value = stream.read(length)
+        return value
+    elif dataType == KeyedArchiveDataTypes.UINT32:
+        value, = unpackStream("<I", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.KEYED_ARCHIVE:
+        length, = unpackStream("<I", stream)
+        stream = BytesIO(stream.read(length))
+        value = readKeyedArchive(stream, fastnames)
+        return value
+    elif dataType == KeyedArchiveDataTypes.INT64:
+        value, = unpackStream("<q", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.UINT64:
+        value, = unpackStream("<Q", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.VECTOR2:
+        value = unpackStream("<2f", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.VECTOR3:
+        value = unpackStream("<3f", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.VECTOR4:
+        value = unpackStream("<4f", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.MATRIX2:
+        value = unpackStream("<4f", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.MATRIX3:
+        value = unpackStream("<9f", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.MATRIX4:
+        value = unpackStream("<16f", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.COLOR:
+        value = unpackStream("<4f", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.FASTNAME:
+        valueID, = unpackStream("<I", stream)
+        value = fastnames[valueID]
+        return value
+    elif dataType == KeyedArchiveDataTypes.AABBOX3:
+        value = unpackStream("<6f", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.FILEPATH:
+        valueID, = unpackStream("<I", stream)
+        value = fastnames[valueID]
+        return value
+    elif dataType == KeyedArchiveDataTypes.FLOAT64:
+        value, = unpackStream("<d", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.INT8:
+        value, = unpackStream("b", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.UINT8:
+        value, = unpackStream("B", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.INT16:
+        value, = unpackStream("<h", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.UINT16:
+        value, = unpackStream("<H", stream)
+        return value
+    elif dataType == KeyedArchiveDataTypes.ARRAY:
+        length, = unpackStream("<I", stream)
+        value = []
+        for itemI in range(length):
+            value.append(
+                readVersion2Value(stream, fastnames)
+            )
+        return value
+    elif dataType == KeyedArchiveDataTypes.TRANSFORM:
+        value = unpackStream("<10f", stream)
         return value
     else:
         raise RuntimeError(f"Unknown KeyedArchive data type: {dataType}")
@@ -129,24 +240,62 @@ def readVersion1Value(stream):
 '''
 Main IO
 '''
-def readKeyedArchive(stream):
+def readKeyedArchive(stream, fastnames={}):
     # Verify signature
     signature = stream.read(2)
     if signature != b"KA":
         raise RuntimeError(f"Invalid KeyedArchive signature: {signature}")
     
     # Read info
-    version, versionVariant, childCount = unpackStream("<2BI", stream)
-    
+    version, versionVariant = unpackStream("<2B", stream)
+
     # Read version specific data
     archive = {}
     if version == 1:
+        if versionVariant != 0:
+            raise RuntimeError(f"Unknown version 1 variant: {versionVariant}")
+
+        childCount, = unpackStream("<I", stream)
         for _ in range(childCount):
             key = readVersion1Value(stream)
             value = readVersion1Value(stream)
             archive[key] = value
-    else:
-        raise RuntimeError(f"Only version 1 KeyedArchives are implemented, got: {version}")
+    elif version == 2:
+        # If this is the root block then read fastnames and then children
+        if versionVariant == 0:
+            fastnameCount, = unpackStream("<I", stream)
+            # First read the string values
+            fastnameValues = []
+            for _ in range(fastnameCount):
+                stringLength, = unpackStream("<H", stream)
+                string = stream.read(stringLength).decode("utf-8")
+                fastnameValues.append(string)
+            # Assign fastnames to IDs
+            for fastnameI in range(fastnameCount):
+                fastnameID, = unpackStream("<I", stream)
+                fastnameValue = fastnameValues[fastnameI]
+                fastnames[fastnameID] = fastnameValue
 
-    print(f"[KeyedArchive version={version} variant={versionVariant} children={childCount}]")
+            # Read root children
+            childCount, = unpackStream("<I", stream)
+            for _ in range(childCount):
+                keyID, = unpackStream("<I", stream)
+                key = fastnames[keyID]
+                value = readVersion2Value(stream, fastnames)
+                archive[key] = value
+        elif versionVariant == 1:
+            childCount, = unpackStream("<I", stream)
+            for _ in range(childCount):
+                keyID, = unpackStream("<I", stream)
+                key = fastnames[keyID]
+                value = readVersion2Value(stream, fastnames)
+                archive[key] = value
+        elif versionVariant == 0xFF:
+            pass # This variant is just an empty node
+        else:
+            raise RuntimeError(f"Unknown KeyedArchive version 2 variant: {versionVariant}")
+    else:
+        raise RuntimeError(f"Unknown KeyedArchive version: {version}")
+
+    print(f"[KeyedArchive version={version} variant={versionVariant} children={len(archive)}]")
     return archive
