@@ -27,13 +27,39 @@ class ImportDava(Operator, ImportHelper):
     def execute(self, context):
         print(f"Reading DAVA data from {self.filepath}")
 
+        # Determine files
+        scgFilepath = ""
+        sc2Filepath = ""
+        fileExtensions = self.filepath.split(".")
+        if fileExtensions[-1] == "dvpl":
+            if fileExtensions[-2] == "scg":
+                scgFilepath = self.filepath
+                fileExtensions[-2] = "sc2"
+                sc2Filepath = ".".join(fileExtensions)
+            elif fileExtensions[-2] == "sc2":
+                sc2Filepath = self.filepath
+                fileExtensions[-2] = "scg"
+                scgFilepath = ".".join(fileExtensions)
+            else:
+                raise RuntimeError(f"Couldn't identify any sc2 or scg files from: {self.filepath}")
+        elif fileExtensions[-1] == "scg":
+            scgFilepath = self.filepath
+            fileExtensions[-1] = "sc2"
+            sc2Filepath = ".".join(fileExtensions)
+        elif fileExtensions[-1] == "sc2":
+            sc2Filepath = self.filepath
+            fileExtensions[-1] = "scg"
+            scgFilepath = ".".join(fileExtensions)
+        else:
+            raise RuntimeError(f"Couldn't identify any sc2 or scg files from: {self.filepath}")
+
         # Read data
         geometryData = SCG()
-        # with open(self.filepath, "rb") as file:
-        #      geometryData.read(file)
+        with open(scgFilepath, "rb") as file:
+              geometryData.read(file)
 
         sceneData = SC2()
-        with open(self.filepath, "rb") as file:
+        with open(sc2Filepath, "rb") as file:
             sceneData.read(file)
 
         # Import data
